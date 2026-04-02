@@ -31,6 +31,7 @@ DRCT
 endlocal
 ERRORLEVEL
 esac
+foojay
 GETTIME
 gitmoji
 gradlew
