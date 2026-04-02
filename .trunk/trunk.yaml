@@ -21,9 +21,10 @@ lint:
   ignore:
     - linters: [osv-scanner]
       paths: [ios/Podfile.lock]
-    - linters: [shfmt]
+    - linters: [shfmt, shellcheck]
       paths: [android/gradlew]
   enabled:
+    - cspell@9.7.0
     - checkov@3.2.513
     - dotenv-linter@4.0.0
     - eslint@8.57.0
