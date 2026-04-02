@@ -13,7 +13,8 @@ This is **not** a production app. Decisions should favour speed of execution and
 ## Current State
 
 - **Phase**: Day 0 complete — basic RN 0.84.1 template running on iOS and Android.
-- `App.tsx` renders a minimal placeholder screen inside `SafeAreaProvider`. No `src/` directory exists yet.
+- `App.tsx` renders a minimal placeholder screen inside `SafeAreaProvider`.
+- `src/` has been scaffolded with placeholder directories, but feature implementation has not started yet.
 - Runtime dependencies are still close to the template baseline. The only app-level addition beyond core React Native is `react-native-safe-area-context`.
 
 ---
