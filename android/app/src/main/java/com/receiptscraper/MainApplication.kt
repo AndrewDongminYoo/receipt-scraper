@@ -23,6 +23,13 @@ class MainApplication :
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) {
+            // This emulator cannot reach Metro via 10.0.2.2, but adb reverse to localhost works.
+            getSharedPreferences("${packageName}_preferences", MODE_PRIVATE)
+                .edit()
+                .putString("debug_http_host", "localhost:8081")
+                .apply()
+        }
         loadReactNative(this)
     }
 }
