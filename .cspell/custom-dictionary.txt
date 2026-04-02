@@ -44,6 +44,7 @@ IPHONEOS
 iphonesimulator
 JAVACMD
 jsbundle
+JTTV
 jvmargs
 LDFLAGS
 libc
