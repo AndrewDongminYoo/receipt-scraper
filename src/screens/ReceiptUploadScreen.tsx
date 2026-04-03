@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import type { Asset, ImageLibraryOptions } from 'react-native-image-picker';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -10,7 +11,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { uploadReceipt } from '../api/receipts';
+import {
+  receiptQueryKeys,
+  uploadReceipt,
+  type UploadReceiptParams,
+} from '../api/receipts';
 
 const imagePickerOptions: ImageLibraryOptions = {
   mediaType: 'photo',
@@ -18,9 +23,7 @@ const imagePickerOptions: ImageLibraryOptions = {
   selectionLimit: 1,
 };
 
-type UploadState = 'idle' | 'uploading' | 'success' | 'error';
-
-const defaultStatusMessage =
+const defaultPickerMessage =
   'Choose a receipt image from your library to start the upload flow.';
 
 function formatFileSize(fileSize?: number) {
@@ -52,29 +55,45 @@ function getUploadErrorMessage(error: unknown) {
 }
 
 function ReceiptUploadScreen() {
+  const queryClient = useQueryClient();
   const [selectedAsset, setSelectedAsset] = React.useState<Asset | null>(null);
   const [simulateFailure, setSimulateFailure] = React.useState(false);
-  const [uploadState, setUploadState] = React.useState<UploadState>('idle');
-  const [statusMessage, setStatusMessage] =
-    React.useState(defaultStatusMessage);
+  const [pickerMessage, setPickerMessage] =
+    React.useState(defaultPickerMessage);
 
-  const isUploading = uploadState === 'uploading';
+  const uploadMutation = useMutation({
+    mutationFn: ({ asset, shouldFail }: UploadReceiptParams) =>
+      uploadReceipt({ asset, shouldFail }),
+    onSuccess: () => {
+      setSimulateFailure(false);
+      queryClient.invalidateQueries({ queryKey: receiptQueryKeys.all });
+    },
+  });
+
+  const isUploading = uploadMutation.isPending;
+
+  const displayMessage = isUploading
+    ? 'Uploading receipt...'
+    : uploadMutation.isSuccess
+      ? uploadMutation.data.message
+      : uploadMutation.isError
+        ? getUploadErrorMessage(uploadMutation.error)
+        : pickerMessage;
 
   const handlePickReceipt = async () => {
     const result = await launchImageLibrary(imagePickerOptions);
 
     if (result.didCancel) {
-      setStatusMessage(
+      setPickerMessage(
         selectedAsset
           ? 'Selection was cancelled. Keeping the current receipt preview.'
-          : defaultStatusMessage,
+          : defaultPickerMessage,
       );
       return;
     }
 
     if (result.errorCode || !result.assets?.[0]?.uri) {
-      setUploadState('error');
-      setStatusMessage(
+      setPickerMessage(
         result.errorMessage ||
           'Unable to access the selected receipt. Please choose a different image.',
       );
@@ -84,33 +103,21 @@ function ReceiptUploadScreen() {
     const nextAsset = result.assets[0];
 
     setSelectedAsset(nextAsset);
-    setUploadState('idle');
-    setStatusMessage(
+    uploadMutation.reset();
+    setPickerMessage(
       `Ready to upload ${nextAsset.fileName || 'the selected receipt'}.`,
     );
   };
 
-  const submitUpload = async (shouldFail: boolean) => {
-    if (!selectedAsset) {
+  const submitUpload = (shouldFail: boolean) => {
+    if (!selectedAsset || isUploading) {
       return;
     }
 
-    setUploadState('uploading');
-    setStatusMessage('Uploading receipt...');
-
-    try {
-      const response = await uploadReceipt({
-        asset: selectedAsset,
-        shouldFail,
-      });
-
-      setSimulateFailure(false);
-      setUploadState('success');
-      setStatusMessage(response.message);
-    } catch (error) {
-      setUploadState('error');
-      setStatusMessage(getUploadErrorMessage(error));
-    }
+    uploadMutation.mutate({
+      asset: selectedAsset,
+      shouldFail,
+    });
   };
 
   return (
@@ -193,7 +200,7 @@ function ReceiptUploadScreen() {
               title={isUploading ? 'Uploading...' : 'Upload Receipt'}
             />
           </View>
-          {uploadState === 'error' ? (
+          {uploadMutation.isError ? (
             <View style={styles.buttonWrapper}>
               <Button
                 disabled={!selectedAsset || isUploading}
@@ -209,8 +216,8 @@ function ReceiptUploadScreen() {
       <View
         style={[
           styles.statusCard,
-          uploadState === 'success' && styles.statusCardSuccess,
-          uploadState === 'error' && styles.statusCardError,
+          uploadMutation.isSuccess && styles.statusCardSuccess,
+          uploadMutation.isError && styles.statusCardError,
         ]}
         testID="receipt-upload-status"
       >
@@ -219,7 +226,7 @@ function ReceiptUploadScreen() {
           style={styles.statusMessage}
           testID="receipt-upload-status-message"
         >
-          {statusMessage}
+          {displayMessage}
         </Text>
       </View>
     </ScrollView>
