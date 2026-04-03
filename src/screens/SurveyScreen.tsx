@@ -143,6 +143,15 @@ function SurveyScreen() {
         ),
       )}
 
+      {isSubmittingSurvey ? (
+        <StateCard
+          message="Submitting your answers..."
+          showsActivityIndicator
+          testID="survey-submitting"
+          title="Submitting"
+        />
+      ) : null}
+
       {submitErrorMessage ? (
         <StateCard
           message={submitErrorMessage}

@@ -162,7 +162,7 @@ test('disables repeated submit while the survey request is in flight', async () 
   await user.press(screen.getByTestId('submit-survey-button'));
 
   await waitFor(() => {
-    expect(screen.getByText('Submitting Survey...')).toBeTruthy();
+    expect(screen.getByTestId('survey-submitting')).toBeTruthy();
     expect(screen.getByTestId('submit-survey-button')).toBeDisabled();
   });
 
