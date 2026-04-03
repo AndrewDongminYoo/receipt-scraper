@@ -41,14 +41,15 @@ The target app is a minimal receipt rewards mini-clone with this flow:
 
 ## Current Status
 
-The repository has completed Day 3 of the sprint.
+The repository has completed Day 4 of the sprint.
 
 - Day 0 is complete: the React Native 0.84.1 app runs on both iOS and Android.
 - Day 1 is complete: the app ships with a 5-screen native-stack navigation shell.
 - Day 2 is complete: `ReceiptUploadScreen` now selects a photo, previews it, and triggers a mock multipart upload request with visible success, failure, and retry states.
 - Day 3 is complete: `ReceiptListScreen` now reads the shared mock receipt store through TanStack Query and refreshes automatically after a successful upload mutation.
+- Day 4 is complete: `SurveyScreen` now validates a 3-question multiple-choice form with `react-hook-form` and `zod`, then routes successful submissions into `RewardResultScreen`.
 - `App.tsx` mounts the app root, `SafeAreaProvider`, and the static root navigator.
-- The app-level runtime dependencies now include React Navigation 7, `@tanstack/react-query`, `axios`, `react-native-image-picker`, and `react-native-screens`.
+- The app-level runtime dependencies now include React Navigation 7, `@tanstack/react-query`, `react-hook-form`, `zod`, `axios`, `react-native-image-picker`, and `react-native-screens`.
 - Tests now use Jest with `@testing-library/react-native`. `react-test-renderer` remains installed only because the testing library requires it as a peer dependency.
 
 ## Fixed Delivery Plan
@@ -119,19 +120,16 @@ Use React Native CLI, not Expo, because the point is to practice the environment
 | `axios`                          | Mock HTTP uploads     |
 | `react-native`                   | Core mobile framework |
 | `react`                          | UI runtime            |
+| `react-hook-form`                | Survey form state     |
 | `react-native-image-picker`      | Photo library access  |
 | `react-native-safe-area-context` | Safe area handling    |
 | `react-native-screens`           | Native screen support |
 | `typescript`                     | Type checking         |
+| `zod`                            | Survey validation     |
 
 ### Planned Later
 
-Only add dependencies when the corresponding day requires them.
-
-| Package           | Planned Day | Purpose       |
-| ----------------- | ----------- | ------------- |
-| `react-hook-form` | Day 4       | Form handling |
-| `zod`             | Day 4       | Validation    |
+No additional libraries are planned for Day 5. The remaining scope is polish and cleanup.
 
 ## Testing Stack
 
@@ -237,8 +235,7 @@ The first expansion points would be:
 These trade-offs are expected for the prototype phase:
 
 - The Day 2 upload path uses a mock `axios` adapter instead of a real backend, so upload success and failure are deterministic practice flows rather than production networking.
-- The rest of the product flow is still placeholder UI until Day 3 and Day 4 land.
-- Networking, navigation, validation, and list behavior will remain intentionally simple even after implementation because the goal is confidence, not completeness.
+- Networking, navigation, validation, and list behavior remain intentionally simple even after implementation because the goal is confidence, not completeness.
 
 ## Reference Documents
 

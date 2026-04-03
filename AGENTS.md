@@ -43,7 +43,7 @@ The implementation order is fixed and must not change:
 5. Survey form + reward result (Day 4)
 6. Polish and cleanup (Day 5)
 
-**Planned tech stack** (not all installed yet — add only when the corresponding day arrives):
+**Current tech stack**:
 
 - `@react-navigation/native` + `@react-navigation/native-stack` — navigation
 - `@tanstack/react-query` — server state
@@ -51,7 +51,7 @@ The implementation order is fixed and must not change:
 - `axios` — HTTP client
 - `react-native-image-picker` — camera / gallery access
 
-Keep the dependency surface minimal. Do not introduce a library unless it is required for the current day's scope.
+Keep the dependency surface minimal. Do not introduce another library unless it is required for the current day's scope.
 
 ## Anti-Patterns to Avoid
 

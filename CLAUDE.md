@@ -12,13 +12,16 @@ This is **not** a production app. Decisions should favour speed of execution and
 
 ## Current State
 
-- **Phase**: Day 3 complete — the app now has a 5-screen navigation shell, a working receipt upload practice flow, and a TanStack Query-backed receipt list.
+- **Phase**: Day 4 complete — the app now has a 5-screen navigation shell, a working receipt upload practice flow, a TanStack Query-backed receipt list, and a survey-to-reward flow.
 - `App.tsx` renders the app root inside `SafeAreaProvider`, mounts the query client, and mounts the static root navigator.
 - `src/navigation/RootNavigator.tsx` defines the shared native-stack routes and titles.
 - `src/screens/ReceiptUploadScreen.tsx` now supports photo-library selection, preview, mock upload, failure simulation, retry handling, and receipts query invalidation on success.
 - `src/screens/ReceiptListScreen.tsx` reads the shared mock receipt store with TanStack Query and handles loading, empty, error, and success states.
+- `src/screens/SurveyScreen.tsx` uses `react-hook-form` plus `zod` to validate three multiple-choice questions and submit the Day 4 reward flow.
+- `src/screens/RewardResultScreen.tsx` reads the latest reward result from the mock reward query and handles empty, loading, and success states.
 - `src/api/receipts.ts` uses `axios` with a mock adapter for uploads and exposes a shared `fetchReceipts()` query source for Day 3.
-- Runtime dependencies now include React Navigation 7, `@tanstack/react-query`, `axios`, `react-native-image-picker`, and `react-native-screens`.
+- `src/api/rewards.ts` stores the latest mock reward result and exposes survey submission plus reward-result query helpers for Day 4.
+- Runtime dependencies now include React Navigation 7, `@tanstack/react-query`, `react-hook-form`, `zod`, `axios`, `react-native-image-picker`, and `react-native-screens`.
 - Tests are authored with Jest and `@testing-library/react-native`. `react-test-renderer` remains only as a peer dependency required by the testing library.
 
 ---
@@ -27,27 +30,24 @@ This is **not** a production app. Decisions should favour speed of execution and
 
 ### Installed
 
-| Package                          | Scope | Purpose          |
-| -------------------------------- | ----- | ---------------- |
-| `@tanstack/react-query`          | prod  | Server state     |
-| `@react-navigation/native`       | prod  | Navigation shell |
-| `@react-navigation/native-stack` | prod  | Native stack     |
-| `axios`                          | prod  | Mock uploads     |
-| `react-native` 0.84.1            | prod  | Core framework   |
-| `react` 19.2.3                   | prod  | UI runtime       |
-| `react-native-image-picker`      | prod  | Photo picker     |
-| `react-native-safe-area-context` | prod  | Safe area insets |
-| `react-native-screens`           | prod  | Native screens   |
-| `typescript` 5.8.3               | dev   | Type checking    |
+| Package                          | Scope | Purpose           |
+| -------------------------------- | ----- | ----------------- |
+| `@tanstack/react-query`          | prod  | Server state      |
+| `@react-navigation/native`       | prod  | Navigation shell  |
+| `@react-navigation/native-stack` | prod  | Native stack      |
+| `axios`                          | prod  | Mock uploads      |
+| `react-native` 0.84.1            | prod  | Core framework    |
+| `react` 19.2.3                   | prod  | UI runtime        |
+| `react-hook-form`                | prod  | Survey form state |
+| `react-native-image-picker`      | prod  | Photo picker      |
+| `react-native-safe-area-context` | prod  | Safe area insets  |
+| `react-native-screens`           | prod  | Native screens    |
+| `typescript` 5.8.3               | dev   | Type checking     |
+| `zod`                            | prod  | Schema validation |
 
 ### Planned (add only when the day's scope requires it)
 
-| Package           | Day   | Purpose           |
-| ----------------- | ----- | ----------------- |
-| `react-hook-form` | Day 4 | Form handling     |
-| `zod`             | Day 4 | Schema validation |
-
-Do not install any of these ahead of schedule.
+No additional packages are planned for Day 5. Use the current stack to finish polish and cleanup.
 
 ---
 
