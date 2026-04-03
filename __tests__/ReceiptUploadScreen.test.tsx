@@ -2,8 +2,8 @@ import React from 'react';
 import {
   render,
   screen,
-  fireEvent,
   waitFor,
+  userEvent,
 } from '@testing-library/react-native';
 import {
   launchImageLibrary,
@@ -50,6 +50,7 @@ const successResponse: ReceiptUploadResponse = {
 };
 
 beforeEach(() => {
+  jest.useFakeTimers();
   mockedLaunchImageLibrary.mockResolvedValue({
     assets: [mockAsset],
   } as ImagePickerResponse);
@@ -57,35 +58,42 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
   jest.clearAllMocks();
 });
 
 test('selects a receipt from the library and shows a preview', async () => {
+  const user = userEvent.setup();
+
   render(<ReceiptUploadScreen />);
 
-  fireEvent.press(screen.getByTestId('pick-receipt-button'));
+  await user.press(screen.getByTestId('pick-receipt-button'));
 
-  await waitFor(() => {
-    expect(mockedLaunchImageLibrary).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('receipt-preview-image').props.source).toEqual({
-      uri: mockAsset.uri,
-    });
-    expect(screen.getByTestId('receipt-file-name').props.children).toBe(
-      mockAsset.fileName,
-    );
-    expect(screen.getByTestId('upload-receipt-button').props.disabled).toBe(
-      false,
-    );
+  const previewImage = await screen.findByTestId('receipt-preview-image');
+
+  expect(mockedLaunchImageLibrary).toHaveBeenCalledTimes(1);
+  expect(previewImage.props.source).toEqual({
+    uri: mockAsset.uri,
   });
+  expect(screen.getByTestId('receipt-file-name').props.children).toBe(
+    mockAsset.fileName,
+  );
+  expect(
+    screen.getByTestId('upload-receipt-button').props.accessibilityState
+      ?.disabled,
+  ).toBe(false);
 });
 
 test('uploads a selected receipt and shows a success status', async () => {
+  const user = userEvent.setup();
+
   render(<ReceiptUploadScreen />);
 
-  fireEvent.press(screen.getByTestId('pick-receipt-button'));
-  await waitFor(() => screen.getByTestId('receipt-preview-image'));
+  await user.press(screen.getByTestId('pick-receipt-button'));
+  await screen.findByTestId('receipt-preview-image');
 
-  fireEvent.press(screen.getByTestId('upload-receipt-button'));
+  await user.press(screen.getByTestId('upload-receipt-button'));
 
   await waitFor(() => {
     expect(mockedUploadReceipt).toHaveBeenCalledWith({
@@ -99,6 +107,8 @@ test('uploads a selected receipt and shows a success status', async () => {
 });
 
 test('shows an error state and retries the same receipt after a failed upload', async () => {
+  const user = userEvent.setup();
+
   mockedUploadReceipt
     .mockRejectedValueOnce(
       new Error(
@@ -109,11 +119,11 @@ test('shows an error state and retries the same receipt after a failed upload', 
 
   render(<ReceiptUploadScreen />);
 
-  fireEvent.press(screen.getByTestId('pick-receipt-button'));
-  await waitFor(() => screen.getByTestId('receipt-preview-image'));
+  await user.press(screen.getByTestId('pick-receipt-button'));
+  await screen.findByTestId('receipt-preview-image');
 
-  fireEvent.press(screen.getByTestId('simulate-failure-toggle'));
-  fireEvent.press(screen.getByTestId('upload-receipt-button'));
+  await user.press(screen.getByTestId('simulate-failure-toggle'));
+  await user.press(screen.getByTestId('upload-receipt-button'));
 
   await waitFor(() => {
     expect(mockedUploadReceipt).toHaveBeenNthCalledWith(1, {
@@ -128,7 +138,7 @@ test('shows an error state and retries the same receipt after a failed upload', 
     expect(screen.getByTestId('retry-upload-button')).toBeTruthy();
   });
 
-  fireEvent.press(screen.getByTestId('retry-upload-button'));
+  await user.press(screen.getByTestId('retry-upload-button'));
 
   await waitFor(() => {
     expect(mockedUploadReceipt).toHaveBeenNthCalledWith(2, {
