@@ -66,6 +66,7 @@ pbxuser
 perspectivev
 Podfile
 Preact
+Pressable
 proguard
 Proguard
 reactjs
@@ -89,6 +90,7 @@ swmansion
 tanstack
 tappable
 Testables
+touchables
 xcassets
 xccheckout
 xcconfig
