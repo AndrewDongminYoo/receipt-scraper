@@ -9,7 +9,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "start": "react-native start --reset-cache",
-    "test": "jest --runInBand"
+    "test": "jest"
   },
   "dependencies": {
     "@react-navigation/native": "^7.2.2",

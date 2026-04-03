@@ -52,18 +52,14 @@ const mockedSubmitSurvey = jest.fn(async (answers: Record<string, string>) => {
   };
 });
 
-jest.mock(
-  '../src/api/rewards',
-  () => ({
-    fetchLatestRewardResult: () => mockedFetchLatestRewardResult(),
-    rewardResultQueryKeys: {
-      latest: ['reward-result'],
-    },
-    submitSurvey: (answers: Record<string, string>) =>
-      mockedSubmitSurvey(answers),
-  }),
-  { virtual: true },
-);
+jest.mock('../src/api/rewards', () => ({
+  fetchLatestRewardResult: () => mockedFetchLatestRewardResult(),
+  rewardResultQueryKeys: {
+    latest: ['reward-result'],
+  },
+  submitSurvey: (answers: Record<string, string>) =>
+    mockedSubmitSurvey(answers),
+}));
 
 beforeEach(() => {
   jest.useFakeTimers();
