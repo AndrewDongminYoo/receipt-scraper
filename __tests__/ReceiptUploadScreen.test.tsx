@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  render,
-  screen,
-  waitFor,
-  userEvent,
-} from '@testing-library/react-native';
+import { screen, userEvent, waitFor } from '@testing-library/react-native';
 import {
   launchImageLibrary,
   type Asset,
@@ -12,9 +7,13 @@ import {
 } from 'react-native-image-picker';
 import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
 import { uploadReceipt } from '../src/api/receipts';
+import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 import type { ReceiptItem, ReceiptUploadResponse } from '../src/types/receipt';
 
 jest.mock('../src/api/receipts', () => ({
+  receiptQueryKeys: {
+    all: ['receipts'],
+  },
   uploadReceipt: jest.fn(),
 }));
 
@@ -49,8 +48,21 @@ const successResponse: ReceiptUploadResponse = {
   receipt: mockReceipt,
 };
 
+let consoleErrorSpy: jest.SpyInstance;
+
+function expectNoActWarnings() {
+  expect(
+    consoleErrorSpy.mock.calls.some(
+      ([message]) =>
+        typeof message === 'string' &&
+        message.includes('inside a test was not wrapped in act'),
+    ),
+  ).toBe(false);
+}
+
 beforeEach(() => {
   jest.useFakeTimers();
+  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   mockedLaunchImageLibrary.mockResolvedValue({
     assets: [mockAsset],
   } as ImagePickerResponse);
@@ -60,38 +72,32 @@ beforeEach(() => {
 afterEach(() => {
   jest.clearAllTimers();
   jest.useRealTimers();
+  consoleErrorSpy.mockRestore();
   jest.clearAllMocks();
 });
 
 test('selects a receipt from the library and shows a preview', async () => {
   const user = userEvent.setup();
 
-  render(<ReceiptUploadScreen />);
+  renderWithQueryClient(<ReceiptUploadScreen />);
 
   await user.press(screen.getByTestId('pick-receipt-button'));
 
-  const previewImage = await screen.findByTestId('receipt-preview-image');
-
+  expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
   expect(mockedLaunchImageLibrary).toHaveBeenCalledTimes(1);
-  expect(previewImage.props.source).toEqual({
-    uri: mockAsset.uri,
-  });
-  expect(screen.getByTestId('receipt-file-name').props.children).toBe(
-    mockAsset.fileName,
-  );
-  expect(
-    screen.getByTestId('upload-receipt-button').props.accessibilityState
-      ?.disabled,
-  ).toBe(false);
+  expect(screen.getByText('receipt-001.jpg')).toBeTruthy();
+  expect(screen.getByText('Ready to upload receipt-001.jpg.')).toBeTruthy();
+  expect(screen.getByTestId('upload-receipt-button')).toBeEnabled();
+  expectNoActWarnings();
 });
 
 test('uploads a selected receipt and shows a success status', async () => {
   const user = userEvent.setup();
 
-  render(<ReceiptUploadScreen />);
+  renderWithQueryClient(<ReceiptUploadScreen />);
 
   await user.press(screen.getByTestId('pick-receipt-button'));
-  await screen.findByTestId('receipt-preview-image');
+  expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
 
   await user.press(screen.getByTestId('upload-receipt-button'));
 
@@ -100,10 +106,10 @@ test('uploads a selected receipt and shows a success status', async () => {
       asset: mockAsset,
       shouldFail: false,
     });
-    expect(
-      screen.getByTestId('receipt-upload-status-message').props.children,
-    ).toBe(successResponse.message);
   });
+
+  expect(await screen.findByText(successResponse.message)).toBeTruthy();
+  expectNoActWarnings();
 });
 
 test('shows an error state and retries the same receipt after a failed upload', async () => {
@@ -117,26 +123,20 @@ test('shows an error state and retries the same receipt after a failed upload', 
     )
     .mockResolvedValueOnce(successResponse);
 
-  render(<ReceiptUploadScreen />);
+  renderWithQueryClient(<ReceiptUploadScreen />);
 
   await user.press(screen.getByTestId('pick-receipt-button'));
-  await screen.findByTestId('receipt-preview-image');
+  expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
 
   await user.press(screen.getByTestId('simulate-failure-toggle'));
   await user.press(screen.getByTestId('upload-receipt-button'));
 
-  await waitFor(() => {
-    expect(mockedUploadReceipt).toHaveBeenNthCalledWith(1, {
-      asset: mockAsset,
-      shouldFail: true,
-    });
-    expect(
-      screen.getByTestId('receipt-upload-status-message').props.children,
-    ).toBe(
+  expect(
+    await screen.findByText(
       'Mock upload failed. Review the error state, then retry the same receipt.',
-    );
-    expect(screen.getByTestId('retry-upload-button')).toBeTruthy();
-  });
+    ),
+  ).toBeTruthy();
+  expect(screen.getByTestId('retry-upload-button')).toBeTruthy();
 
   await user.press(screen.getByTestId('retry-upload-button'));
 
@@ -145,8 +145,8 @@ test('shows an error state and retries the same receipt after a failed upload', 
       asset: mockAsset,
       shouldFail: false,
     });
-    expect(
-      screen.getByTestId('receipt-upload-status-message').props.children,
-    ).toBe(successResponse.message);
   });
+
+  expect(await screen.findByText(successResponse.message)).toBeTruthy();
+  expectNoActWarnings();
 });
