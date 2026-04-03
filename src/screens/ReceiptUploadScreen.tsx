@@ -16,6 +16,9 @@ import {
   uploadReceipt,
   type UploadReceiptParams,
 } from '../api/receipts';
+import ScreenHeader from '../components/ScreenHeader';
+import SectionCard from '../components/SectionCard';
+import StateCard from '../components/StateCard';
 
 const imagePickerOptions: ImageLibraryOptions = {
   mediaType: 'photo',
@@ -125,20 +128,16 @@ function ReceiptUploadScreen() {
       contentContainerStyle={styles.contentContainer}
       testID="screen-receipt-upload"
     >
-      <Text style={styles.title} testID="screen-receipt-upload-title">
-        Upload Receipt
-      </Text>
-      <Text style={styles.description}>
-        Pick one receipt image, preview it locally, and push a mock multipart
-        upload request through the Day 2 flow.
-      </Text>
+      <ScreenHeader
+        description="Pick one receipt image, preview it locally, and push a mock multipart upload request through the Day 2 flow."
+        title="Upload Receipt"
+        titleTestID="screen-receipt-upload-title"
+      />
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>1. Pick a receipt</Text>
-        <Text style={styles.supportingText}>
-          The image comes from the system photo library via
-          `react-native-image-picker`.
-        </Text>
+      <SectionCard
+        description="The image comes from the system photo library via `react-native-image-picker`."
+        title="1. Pick a receipt"
+      >
         <View style={styles.buttonWrapper}>
           <Button
             disabled={isUploading}
@@ -147,10 +146,9 @@ function ReceiptUploadScreen() {
             title="Choose From Library"
           />
         </View>
-      </View>
+      </SectionCard>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>2. Preview the selected file</Text>
+      <SectionCard title="2. Preview the selected file">
         {selectedAsset?.uri ? (
           <>
             <Image
@@ -173,14 +171,12 @@ function ReceiptUploadScreen() {
             </Text>
           </View>
         )}
-      </View>
+      </SectionCard>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>3. Trigger the upload request</Text>
-        <Text style={styles.supportingText}>
-          Toggle mock failure when you want to exercise retry handling without a
-          real backend.
-        </Text>
+      <SectionCard
+        description="Toggle mock failure when you want to exercise retry handling without a real backend."
+        title="3. Trigger the upload request"
+      >
         <View style={styles.buttonGroup}>
           <View style={styles.buttonWrapper}>
             <Button
@@ -211,24 +207,23 @@ function ReceiptUploadScreen() {
             </View>
           ) : null}
         </View>
-      </View>
+      </SectionCard>
 
-      <View
-        style={[
-          styles.statusCard,
-          uploadMutation.isSuccess && styles.statusCardSuccess,
-          uploadMutation.isError && styles.statusCardError,
-        ]}
+      <StateCard
         testID="receipt-upload-status"
+        title="Upload status"
+        variant={
+          uploadMutation.isSuccess
+            ? 'success'
+            : uploadMutation.isError
+              ? 'error'
+              : 'info'
+        }
       >
-        <Text style={styles.sectionTitle}>Upload status</Text>
-        <Text
-          style={styles.statusMessage}
-          testID="receipt-upload-status-message"
-        >
-          {displayMessage}
-        </Text>
-      </View>
+        <View testID="receipt-upload-status-message">
+          <Text style={styles.statusMessage}>{displayMessage}</Text>
+        </View>
+      </StateCard>
     </ScrollView>
   );
 }
@@ -240,23 +235,8 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     width: '100%',
   },
-  card: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-    padding: 20,
-  },
   contentContainer: {
     padding: 24,
-  },
-  description: {
-    color: '#4b5563',
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 24,
-    textAlign: 'left',
   },
   emptyPreview: {
     alignItems: 'center',
@@ -289,43 +269,9 @@ const styles = StyleSheet.create({
     height: 220,
     width: '100%',
   },
-  sectionTitle: {
-    color: '#111827',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  statusCard: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#bfdbfe',
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-  },
-  statusCardError: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
-  },
-  statusCardSuccess: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#86efac',
-  },
   statusMessage: {
-    color: '#1f2937',
     fontSize: 15,
     lineHeight: 22,
-  },
-  supportingText: {
-    color: '#4b5563',
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'left',
   },
 });
 

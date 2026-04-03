@@ -4,15 +4,32 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { fetchLatestRewardResult, rewardResultQueryKeys } from '../api/rewards';
+import ScreenHeader from '../components/ScreenHeader';
+import SectionCard from '../components/SectionCard';
+import StateCard from '../components/StateCard';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import type { SurveyFieldName } from '../types/survey';
 import { surveyFieldLabels, surveyOptionLabelByValue } from '../types/survey';
 import { formatTimestamp } from '../utils/formatTimestamp';
 
+function getRewardResultErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'Unable to load the latest reward result right now.';
+}
+
 function RewardResultScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { data: rewardResult, isLoading } = useQuery({
+  const {
+    data: rewardResult,
+    error,
+    isError,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryFn: fetchLatestRewardResult,
     queryKey: rewardResultQueryKeys.latest,
   });
@@ -22,28 +39,42 @@ function RewardResultScreen() {
       contentContainerStyle={styles.contentContainer}
       testID="screen-reward-result"
     >
-      <Text style={styles.title} testID="screen-reward-result-title">
-        Reward Result
-      </Text>
-      <Text style={styles.description}>
-        Review the latest reward outcome generated from the Day 4 survey flow.
-      </Text>
+      <ScreenHeader
+        description="Review the latest reward outcome generated from the Day 4 survey flow."
+        title="Reward Result"
+        titleTestID="screen-reward-result-title"
+      />
 
       {isLoading ? (
-        <View style={styles.stateCard}>
-          <Text style={styles.stateTitle}>Loading reward...</Text>
-          <Text style={styles.stateMessage}>
-            Pulling the latest submission result from the mock reward store.
-          </Text>
-        </View>
+        <StateCard
+          message="Pulling the latest submission result from the mock reward store."
+          showsActivityIndicator
+          title="Loading reward..."
+        />
       ) : null}
 
-      {!isLoading && !rewardResult ? (
-        <View style={styles.stateCard}>
-          <Text style={styles.stateTitle}>No reward yet</Text>
-          <Text style={styles.stateMessage}>
-            Complete the survey to calculate your reward.
-          </Text>
+      {!isLoading && isError ? (
+        <StateCard
+          message={getRewardResultErrorMessage(error)}
+          testID="reward-result-error"
+          title="Unable to load reward"
+          variant="error"
+        >
+          <View style={styles.buttonWrapper}>
+            <Button
+              onPress={() => refetch()}
+              testID="retry-reward-result-button"
+              title="Try Again"
+            />
+          </View>
+        </StateCard>
+      ) : null}
+
+      {!isLoading && !isError && !rewardResult ? (
+        <StateCard
+          message="Complete the survey to calculate your reward."
+          title="No reward yet"
+        >
           <View style={styles.buttonWrapper}>
             <Button
               onPress={() => navigation.navigate('Survey')}
@@ -51,10 +82,10 @@ function RewardResultScreen() {
               title="Go To Survey"
             />
           </View>
-        </View>
+        </StateCard>
       ) : null}
 
-      {!isLoading && rewardResult ? (
+      {!isLoading && !isError && rewardResult ? (
         <>
           <View style={styles.resultCard}>
             <Text style={styles.resultTitle}>{rewardResult.title}</Text>
@@ -67,8 +98,7 @@ function RewardResultScreen() {
             </Text>
           </View>
 
-          <View style={styles.answersCard}>
-            <Text style={styles.sectionTitle}>Survey summary</Text>
+          <SectionCard title="Survey summary" style={styles.answersCard}>
             {(Object.keys(surveyFieldLabels) as Array<SurveyFieldName>).map(
               fieldName => (
                 <View key={fieldName} style={styles.answerRow}>
@@ -83,7 +113,7 @@ function RewardResultScreen() {
                 </View>
               ),
             )}
-          </View>
+          </SectionCard>
 
           <View style={styles.actionGroup}>
             <View style={styles.buttonWrapper}>
@@ -128,25 +158,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   answersCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-    padding: 20,
+    paddingBottom: 8,
   },
   buttonWrapper: {
     width: '100%',
   },
   contentContainer: {
     padding: 24,
-  },
-  description: {
-    color: '#4b5563',
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 24,
-    textAlign: 'left',
   },
   resultCard: {
     backgroundColor: '#ecfdf5',
@@ -178,37 +196,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 8,
-  },
-  sectionTitle: {
-    color: '#111827',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  stateCard: {
-    backgroundColor: '#f9fafb',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-    padding: 20,
-  },
-  stateMessage: {
-    color: '#4b5563',
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  stateTitle: {
-    color: '#111827',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'left',
   },
 });
 

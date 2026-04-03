@@ -1,14 +1,9 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  ActivityIndicator,
-  Button,
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Button, FlatList, StyleSheet, Text, View } from 'react-native';
 import { fetchReceipts, receiptQueryKeys } from '../api/receipts';
+import ScreenHeader from '../components/ScreenHeader';
+import StateCard from '../components/StateCard';
 import type { ReceiptItem } from '../types/receipt';
 import { formatTimestamp } from '../utils/formatTimestamp';
 
@@ -45,22 +40,28 @@ function ReceiptListScreen() {
 
   return (
     <View style={styles.container} testID="screen-receipt-list">
-      <Text style={styles.title} testID="screen-receipt-list-title">
-        Receipt List
-      </Text>
+      <ScreenHeader
+        description="Review the receipts currently stored in the mock server-state list."
+        title="Receipt List"
+        titleTestID="screen-receipt-list-title"
+      />
 
       {isLoading ? (
-        <View style={styles.stateCard} testID="receipt-list-loading">
-          <ActivityIndicator size="small" />
-          <Text style={styles.description}>Loading receipts...</Text>
-        </View>
+        <StateCard
+          message="Loading receipts..."
+          showsActivityIndicator
+          testID="receipt-list-loading"
+          title="Loading receipts"
+        />
       ) : null}
 
       {!isLoading && isError ? (
-        <View style={styles.stateCard} testID="receipt-list-error">
-          <Text style={styles.description}>
-            {getReceiptsErrorMessage(error)}
-          </Text>
+        <StateCard
+          message={getReceiptsErrorMessage(error)}
+          testID="receipt-list-error"
+          title="Unable to load receipts"
+          variant="error"
+        >
           <View style={styles.retryButtonWrapper}>
             <Button
               onPress={() => refetch()}
@@ -68,16 +69,15 @@ function ReceiptListScreen() {
               title="Try Again"
             />
           </View>
-        </View>
+        </StateCard>
       ) : null}
 
       {!isLoading && !isError && receipts.length === 0 ? (
-        <View style={styles.stateCard} testID="receipt-list-empty">
-          <Text style={styles.description}>No receipts uploaded yet.</Text>
-          <Text style={styles.supportingText}>
-            Upload one from the receipt flow to populate this list.
-          </Text>
-        </View>
+        <StateCard
+          message="Upload one from the receipt flow to populate this list."
+          testID="receipt-list-empty"
+          title="No receipts uploaded yet."
+        />
       ) : null}
 
       {!isLoading && !isError && receipts.length > 0 ? (
@@ -98,18 +98,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingVertical: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 20,
-    textAlign: 'left',
-  },
-  description: {
-    color: '#4b5563',
-    fontSize: 16,
-    lineHeight: 22,
-    textAlign: 'left',
   },
   listContent: {
     gap: 12,
@@ -134,21 +122,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   retryButtonWrapper: {
-    marginTop: 16,
     width: '100%',
-  },
-  stateCard: {
-    backgroundColor: '#f9fafb',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 12,
-    padding: 20,
-  },
-  supportingText: {
-    color: '#6b7280',
-    fontSize: 14,
-    lineHeight: 20,
   },
 });
 

@@ -12,6 +12,9 @@ import {
   View,
 } from 'react-native';
 import { rewardResultQueryKeys, submitSurvey } from '../api/rewards';
+import ScreenHeader from '../components/ScreenHeader';
+import SectionCard from '../components/SectionCard';
+import StateCard from '../components/StateCard';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import type { SurveyFormValues, SurveyFieldName } from '../types/survey';
 import {
@@ -77,13 +80,11 @@ function SurveyScreen() {
       contentContainerStyle={styles.contentContainer}
       testID="screen-survey"
     >
-      <Text style={styles.title} testID="screen-survey-title">
-        Survey
-      </Text>
-      <Text style={styles.description}>
-        Answer three quick multiple-choice questions, validate the inputs, and
-        submit the final Day 4 reward flow.
-      </Text>
+      <ScreenHeader
+        description="Answer three quick multiple-choice questions, validate the inputs, and submit the final Day 4 reward flow."
+        title="Survey"
+        titleTestID="screen-survey-title"
+      />
 
       {(Object.keys(surveyQuestionCopy) as Array<keyof SurveyFormValues>).map(
         fieldName => (
@@ -92,14 +93,10 @@ function SurveyScreen() {
             key={fieldName}
             name={fieldName}
             render={({ field: { onChange, value }, fieldState: { error } }) => (
-              <View style={styles.card}>
-                <Text style={styles.sectionTitle}>
-                  {surveyQuestionCopy[fieldName].title}
-                </Text>
-                <Text style={styles.supportingText}>
-                  {surveyQuestionCopy[fieldName].description}
-                </Text>
-
+              <SectionCard
+                description={surveyQuestionCopy[fieldName].description}
+                title={surveyQuestionCopy[fieldName].title}
+              >
                 <View style={styles.optionGroup}>
                   {surveyFieldOptions[fieldName].map(option => {
                     const isSelected = value === option.value;
@@ -140,17 +137,19 @@ function SurveyScreen() {
                     {error.message}
                   </Text>
                 ) : null}
-              </View>
+              </SectionCard>
             )}
           />
         ),
       )}
 
       {submitErrorMessage ? (
-        <View style={styles.errorCard} testID="survey-submit-error">
-          <Text style={styles.errorCardTitle}>Submission failed</Text>
-          <Text style={styles.errorCardMessage}>{submitErrorMessage}</Text>
-        </View>
+        <StateCard
+          message={submitErrorMessage}
+          testID="survey-submit-error"
+          title="Submission failed"
+          variant="error"
+        />
       ) : null}
 
       <View style={styles.buttonWrapper}>
@@ -170,42 +169,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: '100%',
   },
-  card: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-    padding: 20,
-  },
   contentContainer: {
     padding: 24,
-  },
-  description: {
-    color: '#4b5563',
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 24,
-    textAlign: 'left',
-  },
-  errorCard: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 16,
-    padding: 20,
-  },
-  errorCardMessage: {
-    color: '#991b1b',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  errorCardTitle: {
-    color: '#7f1d1d',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
   },
   errorText: {
     color: '#b91c1c',
@@ -235,24 +200,6 @@ const styles = StyleSheet.create({
   },
   optionGroup: {
     gap: 10,
-  },
-  sectionTitle: {
-    color: '#111827',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  supportingText: {
-    color: '#4b5563',
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'left',
   },
 });
 
