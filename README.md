@@ -41,13 +41,14 @@ The target app is a minimal receipt rewards mini-clone with this flow:
 
 ## Current Status
 
-The repository has completed Day 4 of the sprint.
+The repository has completed Day 5 of the sprint.
 
 - Day 0 is complete: the React Native 0.84.1 app runs on both iOS and Android.
 - Day 1 is complete: the app ships with a 5-screen native-stack navigation shell.
 - Day 2 is complete: `ReceiptUploadScreen` now selects a photo, previews it, and triggers a mock multipart upload request with visible success, failure, and retry states.
 - Day 3 is complete: `ReceiptListScreen` now reads the shared mock receipt store through TanStack Query and refreshes automatically after a successful upload mutation.
 - Day 4 is complete: `SurveyScreen` now validates a 3-question multiple-choice form with `react-hook-form` and `zod`, then routes successful submissions into `RewardResultScreen`.
+- Day 5 is complete: the prototype now uses shared screen and state primitives, explicit reward retry handling, and clearer documentation for what remains outside the prototype boundary.
 - `App.tsx` mounts the app root, `SafeAreaProvider`, and the static root navigator.
 - The app-level runtime dependencies now include React Navigation 7, `@tanstack/react-query`, `react-hook-form`, `zod`, `axios`, `react-native-image-picker`, and `react-native-screens`.
 - Tests now use Jest with `@testing-library/react-native`. `react-test-renderer` remains installed only because the testing library requires it as a peer dependency.
@@ -105,6 +106,22 @@ The point of the fixed order is to prevent wasted time on abstractions before th
 - clean up error and loading UX
 - extract only clearly reusable components
 - document trade-offs and follow-up work
+
+## Prototype Boundary
+
+The current upload flow is intentionally limited to selecting an existing image
+from the photo library with `react-native-image-picker`.
+
+That means the prototype does **not** yet include:
+
+- native camera capture
+- receipt corner detection
+- perspective flattening
+- on-device OCR
+- server-side duplicate or invalid-receipt feedback handling
+
+This is deliberate. Day 5 closes out the prototype that exists today rather
+than half-building a production capture pipeline.
 
 ## Tech Baseline
 
@@ -227,6 +244,8 @@ The first expansion points would be:
 - a real API layer with authenticated requests
 - persistent receipt history and error recovery
 - production-grade upload handling and permission UX
+- native receipt capture with flattening and on-device OCR
+- Firebase Remote Config-backed runtime feature flags
 - analytics, logging, and stronger crash reporting
 - broader automated test coverage for flows and edge cases
 
@@ -235,7 +254,23 @@ The first expansion points would be:
 These trade-offs are expected for the prototype phase:
 
 - The Day 2 upload path uses a mock `axios` adapter instead of a real backend, so upload success and failure are deterministic practice flows rather than production networking.
+- Receipt intake still starts from the photo library instead of a production camera flow, so the repository does not yet exercise document scanning, flattening, or OCR accuracy.
+- Receipt and reward data live in memory only, so state resets on reload and there is no persistence or offline recovery path.
+- Firebase Remote Config is a planned runtime boundary for toggling legacy image import, but the prototype does not yet fetch or apply remote configuration.
 - Networking, navigation, validation, and list behavior remain intentionally simple even after implementation because the goal is confidence, not completeness.
+
+## Production Receipt Capture Follow-Up
+
+The next major work item after the sprint is a production-oriented receipt
+capture pipeline. Its currently approved constraints are:
+
+- prioritize OCR extraction accuracy over scan-only fidelity
+- prefer on-device OCR first, with cost-focused tool research before choosing a stack
+- allow native module bridging if React Native libraries are insufficient
+- upload only the flattened receipt image, OCR result, capture timestamp, and metadata available without extra permissions
+- use Firebase Remote Config to gate whether the older stored-image import path is available at runtime
+- show immediate user feedback when capture fails, OCR fails, the backend flags a likely duplicate receipt, or the backend rejects the image as not being a valid mart, convenience-store, or supermarket receipt
+- exclude confidence scores, crop coordinates, and metadata that would require new permissions
 
 ## Reference Documents
 
