@@ -3,71 +3,30 @@
  */
 
 import React from 'react';
-import ReactTestRenderer from 'react-test-renderer';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import App from '../App';
 import { RootStack } from '../src/navigation/RootNavigator';
 
 const RootStackComponent = RootStack.getComponent();
 
-const renderApp = async () => {
-  let renderer!: ReactTestRenderer.ReactTestRenderer;
-
-  await ReactTestRenderer.act(async () => {
-    renderer = ReactTestRenderer.create(<App />);
-  });
-
-  return renderer;
-};
-
-const renderNavigator = async () => {
-  let renderer!: ReactTestRenderer.ReactTestRenderer;
-
-  await ReactTestRenderer.act(async () => {
-    renderer = ReactTestRenderer.create(
-      <NavigationContainer>
-        <RootStackComponent />
-      </NavigationContainer>,
-    );
-  });
-
-  return renderer;
-};
-
-const pressButton = async (
-  renderer: ReactTestRenderer.ReactTestRenderer,
-  testID: string,
-) => {
-  await ReactTestRenderer.act(async () => {
-    renderer.root.findByProps({ testID }).props.onPress();
-  });
-};
-
-test('App renders without crashing with the Day 1 navigator mounted', async () => {
-  const renderer = await renderApp();
-
-  expect(renderer).toBeTruthy();
-  renderer.unmount();
+test('App renders without crashing with the Day 1 navigator mounted', () => {
+  render(<App />);
 });
 
-test('renders the Home screen with all Day 1 navigation buttons', async () => {
-  const renderer = await renderNavigator();
+test('renders the Home screen with all Day 1 navigation buttons', () => {
+  render(
+    <NavigationContainer>
+      <RootStackComponent />
+    </NavigationContainer>,
+  );
 
-  expect(renderer.root.findByProps({ testID: 'screen-home' })).toBeTruthy();
-  expect(
-    renderer.root.findByProps({ testID: 'screen-home-title' }).props.children,
-  ).toBe('Home');
-  expect(
-    renderer.root.findByProps({ testID: 'nav-receipt-upload' }),
-  ).toBeTruthy();
-  expect(
-    renderer.root.findByProps({ testID: 'nav-receipt-list' }),
-  ).toBeTruthy();
-  expect(renderer.root.findByProps({ testID: 'nav-survey' })).toBeTruthy();
-  expect(
-    renderer.root.findByProps({ testID: 'nav-reward-result' }),
-  ).toBeTruthy();
-  renderer.unmount();
+  expect(screen.getByTestId('screen-home')).toBeTruthy();
+  expect(screen.getByTestId('screen-home-title').props.children).toBe('Home');
+  expect(screen.getByTestId('nav-receipt-upload')).toBeTruthy();
+  expect(screen.getByTestId('nav-receipt-list')).toBeTruthy();
+  expect(screen.getByTestId('nav-survey')).toBeTruthy();
+  expect(screen.getByTestId('nav-reward-result')).toBeTruthy();
 });
 
 test.each([
@@ -92,15 +51,16 @@ test.each([
   ],
 ])(
   'navigates from Home using %s',
-  async (buttonTestID, screenTestID, titleTestID, expectedTitle) => {
-    const renderer = await renderNavigator();
+  (buttonTestID, screenTestID, titleTestID, expectedTitle) => {
+    render(
+      <NavigationContainer>
+        <RootStackComponent />
+      </NavigationContainer>,
+    );
 
-    await pressButton(renderer, buttonTestID);
+    fireEvent.press(screen.getByTestId(buttonTestID));
 
-    expect(renderer.root.findByProps({ testID: screenTestID })).toBeTruthy();
-    expect(
-      renderer.root.findByProps({ testID: titleTestID }).props.children,
-    ).toBe(expectedTitle);
-    renderer.unmount();
+    expect(screen.getByTestId(screenTestID)).toBeTruthy();
+    expect(screen.getByTestId(titleTestID).props.children).toBe(expectedTitle);
   },
 );

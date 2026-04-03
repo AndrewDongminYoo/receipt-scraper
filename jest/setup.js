@@ -29,3 +29,8 @@ jest.mock('react-native-screens', () => {
 });
 
 jest.mock('react-native/src/private/animated/NativeAnimatedHelper');
+
+jest.mock('react-native-image-picker', () => ({
+  launchCamera: jest.fn(),
+  launchImageLibrary: jest.fn(),
+}));
