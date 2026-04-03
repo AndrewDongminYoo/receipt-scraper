@@ -86,6 +86,7 @@ SRCROOT
 subviews
 Subviews
 swmansion
+tanstack
 tappable
 Testables
 xcassets
