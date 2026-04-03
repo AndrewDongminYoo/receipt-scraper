@@ -41,7 +41,7 @@ function HomeScreen() {
         Home
       </Text>
       <Text style={styles.description}>
-        Choose a destination to preview the Day 1 navigation flow.
+        Choose a destination to preview the current practice app flow.
       </Text>
       <View style={styles.buttonGroup}>
         {destinations.map(destination => (
