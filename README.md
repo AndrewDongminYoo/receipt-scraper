@@ -41,13 +41,15 @@ The target app is a minimal receipt rewards mini-clone with this flow:
 
 ## Current Status
 
-The repository has completed Day 2 of the sprint.
+The repository has completed Day 3 of the sprint.
 
 - Day 0 is complete: the React Native 0.84.1 app runs on both iOS and Android.
 - Day 1 is complete: the app ships with a 5-screen native-stack navigation shell.
 - Day 2 is complete: `ReceiptUploadScreen` now selects a photo, previews it, and triggers a mock multipart upload request with visible success, failure, and retry states.
+- Day 3 is complete: `ReceiptListScreen` now reads the shared mock receipt store through TanStack Query and refreshes automatically after a successful upload mutation.
 - `App.tsx` mounts the app root, `SafeAreaProvider`, and the static root navigator.
-- The app-level runtime dependencies now include React Navigation 7, `axios`, `react-native-image-picker`, and `react-native-screens`.
+- The app-level runtime dependencies now include React Navigation 7, `@tanstack/react-query`, `axios`, `react-native-image-picker`, and `react-native-screens`.
+- Tests now use Jest with `@testing-library/react-native`. `react-test-renderer` remains installed only because the testing library requires it as a peer dependency.
 
 ## Fixed Delivery Plan
 
@@ -107,10 +109,11 @@ The point of the fixed order is to prevent wasted time on abstractions before th
 
 Use React Native CLI, not Expo, because the point is to practice the environment that is more likely to show up in actual work.
 
-### Installed Today
+### Installed Now
 
 | Package                          | Purpose               |
 | -------------------------------- | --------------------- |
+| `@tanstack/react-query`          | Server state          |
 | `@react-navigation/native`       | Navigation container  |
 | `@react-navigation/native-stack` | Native stack routing  |
 | `axios`                          | Mock HTTP uploads     |
@@ -125,11 +128,18 @@ Use React Native CLI, not Expo, because the point is to practice the environment
 
 Only add dependencies when the corresponding day requires them.
 
-| Package                 | Planned Day | Purpose       |
-| ----------------------- | ----------- | ------------- |
-| `@tanstack/react-query` | Day 3       | Server state  |
-| `react-hook-form`       | Day 4       | Form handling |
-| `zod`                   | Day 4       | Validation    |
+| Package           | Planned Day | Purpose       |
+| ----------------- | ----------- | ------------- |
+| `react-hook-form` | Day 4       | Form handling |
+| `zod`             | Day 4       | Validation    |
+
+## Testing Stack
+
+The test baseline is Jest with `@testing-library/react-native`.
+
+- Write tests against visible UI behavior and user flows.
+- Prefer text, enabled/disabled state, and screen transitions over reading component props.
+- Keep `react-test-renderer` only as a peer dependency required by `@testing-library/react-native`, not as a direct authoring tool.
 
 ## Architecture Rules
 

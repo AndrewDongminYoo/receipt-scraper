@@ -22,7 +22,7 @@ Follow the repo formatter and lint config: Prettier uses single quotes, trailing
 
 ## Testing Guidelines
 
-Jest uses the React Native preset (`jest.config.js`). Add or update tests in `__tests__/` for any behavioral change, and keep test names descriptive, for example `ReceiptListScreen.test.tsx`. At minimum, run `yarn test` and `yarn lint` before opening a PR. There is no published coverage threshold yet, so contributors should treat new UI states and navigation flows as required test targets.
+Jest uses the React Native preset (`jest.config.js`) with `@testing-library/react-native` as the primary test API. Keep `react-test-renderer` installed only because `@testing-library/react-native` requires it as a peer dependency; do not write new tests against the renderer API directly. Add or update tests in `__tests__/` for any behavioral change, and keep test names descriptive, for example `ReceiptListScreen.test.tsx`. Prefer assertions on visible text, enabled/disabled state, and user-observable screen behavior over reading component props. At minimum, run `yarn test` and `yarn lint` before opening a PR. There is no published coverage threshold yet, so contributors should treat new UI states and navigation flows as required test targets.
 
 ## Commit & Pull Request Guidelines
 

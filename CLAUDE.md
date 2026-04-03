@@ -12,12 +12,14 @@ This is **not** a production app. Decisions should favour speed of execution and
 
 ## Current State
 
-- **Phase**: Day 2 complete — the app now has a 5-screen navigation shell plus a working receipt upload practice flow.
-- `App.tsx` renders the app root inside `SafeAreaProvider` and mounts the static root navigator.
+- **Phase**: Day 3 complete — the app now has a 5-screen navigation shell, a working receipt upload practice flow, and a TanStack Query-backed receipt list.
+- `App.tsx` renders the app root inside `SafeAreaProvider`, mounts the query client, and mounts the static root navigator.
 - `src/navigation/RootNavigator.tsx` defines the shared native-stack routes and titles.
-- `src/screens/ReceiptUploadScreen.tsx` now supports photo-library selection, preview, mock upload, failure simulation, and retry handling.
-- `src/api/receipts.ts` uses `axios` with a mock adapter so Day 2 can exercise a multipart-style request without a real backend.
-- Runtime dependencies now include React Navigation 7, `axios`, `react-native-image-picker`, and `react-native-screens`.
+- `src/screens/ReceiptUploadScreen.tsx` now supports photo-library selection, preview, mock upload, failure simulation, retry handling, and receipts query invalidation on success.
+- `src/screens/ReceiptListScreen.tsx` reads the shared mock receipt store with TanStack Query and handles loading, empty, error, and success states.
+- `src/api/receipts.ts` uses `axios` with a mock adapter for uploads and exposes a shared `fetchReceipts()` query source for Day 3.
+- Runtime dependencies now include React Navigation 7, `@tanstack/react-query`, `axios`, `react-native-image-picker`, and `react-native-screens`.
+- Tests are authored with Jest and `@testing-library/react-native`. `react-test-renderer` remains only as a peer dependency required by the testing library.
 
 ---
 
@@ -27,6 +29,7 @@ This is **not** a production app. Decisions should favour speed of execution and
 
 | Package                          | Scope | Purpose          |
 | -------------------------------- | ----- | ---------------- |
+| `@tanstack/react-query`          | prod  | Server state     |
 | `@react-navigation/native`       | prod  | Navigation shell |
 | `@react-navigation/native-stack` | prod  | Native stack     |
 | `axios`                          | prod  | Mock uploads     |
@@ -39,11 +42,10 @@ This is **not** a production app. Decisions should favour speed of execution and
 
 ### Planned (add only when the day's scope requires it)
 
-| Package                 | Day   | Purpose                      |
-| ----------------------- | ----- | ---------------------------- |
-| `@tanstack/react-query` | Day 3 | Server state / data fetching |
-| `react-hook-form`       | Day 4 | Form handling                |
-| `zod`                   | Day 4 | Schema validation            |
+| Package           | Day   | Purpose           |
+| ----------------- | ----- | ----------------- |
+| `react-hook-form` | Day 4 | Form handling     |
+| `zod`             | Day 4 | Schema validation |
 
 Do not install any of these ahead of schedule.
 
@@ -131,6 +133,14 @@ Broad quality check (if Trunk CLI is installed):
 ```bash
 trunk check
 ```
+
+---
+
+## Testing Approach
+
+- Use Jest with `@testing-library/react-native` for all new tests.
+- Assert on visible text, availability of actions, and screen behavior before falling back to test IDs.
+- Keep `react-test-renderer` only because `@testing-library/react-native` requires it as a peer dependency.
 
 ---
 
