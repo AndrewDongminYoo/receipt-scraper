@@ -10,8 +10,13 @@ import type {
   ReceiptUploadResponse,
 } from '../types/receipt';
 
+const LIST_DELAY_MS = 450;
 const UPLOAD_DELAY_MS = 900;
 const mockReceipts: ReceiptItem[] = [];
+
+export const receiptQueryKeys = {
+  all: ['receipts'] as const,
+};
 
 export interface UploadReceiptParams {
   asset: Asset;
@@ -100,6 +105,12 @@ async function mockUploadAdapter(
 }
 
 uploadClient.defaults.adapter = mockUploadAdapter;
+
+export async function fetchReceipts(): Promise<ReceiptItem[]> {
+  await wait(LIST_DELAY_MS);
+
+  return [...mockReceipts];
+}
 
 export async function uploadReceipt({
   asset,
