@@ -1,7 +1,7 @@
 import React from 'react';
 import {
-  fireEvent,
   screen,
+  userEvent,
   waitFor,
   within,
 } from '@testing-library/react-native';
@@ -27,6 +27,7 @@ const mockAsset: Asset = {
 };
 
 let mockReceiptStore: ReceiptItem[] = [];
+let consoleErrorSpy: jest.SpyInstance;
 
 jest.mock('../src/api/receipts', () => ({
   fetchReceipts: jest.fn(async () => mockReceiptStore),
@@ -71,6 +72,8 @@ function ReceiptFlowHarness() {
 }
 
 beforeEach(() => {
+  jest.useFakeTimers();
+  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   mockReceiptStore = [];
   mockedLaunchImageLibrary.mockResolvedValue({
     assets: [mockAsset],
@@ -78,18 +81,23 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
+  consoleErrorSpy.mockRestore();
   jest.clearAllMocks();
 });
 
 test('refreshes the receipt list after a successful upload', async () => {
+  const user = userEvent.setup();
+
   renderWithQueryClient(<ReceiptFlowHarness />);
 
   expect(await screen.findByText('No receipts uploaded yet.')).toBeTruthy();
 
-  fireEvent.press(screen.getByTestId('pick-receipt-button'));
+  await user.press(screen.getByTestId('pick-receipt-button'));
   expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
 
-  fireEvent.press(screen.getByTestId('upload-receipt-button'));
+  await user.press(screen.getByTestId('upload-receipt-button'));
 
   expect(
     await screen.findByText(
@@ -103,4 +111,12 @@ test('refreshes the receipt list after a successful upload', async () => {
     expect(within(receiptListItem).getByText('receipt-001.jpg')).toBeTruthy();
     expect(within(receiptListItem).getByText('Pending Review')).toBeTruthy();
   });
+
+  expect(
+    consoleErrorSpy.mock.calls.some(
+      ([message]) =>
+        typeof message === 'string' &&
+        message.includes('inside a test was not wrapped in act'),
+    ),
+  ).toBe(false);
 });

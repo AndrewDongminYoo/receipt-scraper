@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { screen, userEvent } from '@testing-library/react-native';
 import ReceiptListScreen from '../src/screens/ReceiptListScreen';
 import { fetchReceipts } from '../src/api/receipts';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
@@ -37,7 +37,13 @@ function createDeferredReceiptsPromise() {
   return { promise, resolvePromise };
 }
 
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
 afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
   jest.clearAllMocks();
 });
 
@@ -60,6 +66,8 @@ test('shows an empty state when no receipts have been uploaded yet', async () =>
 });
 
 test('shows a retry action after a fetch failure', async () => {
+  const user = userEvent.setup();
+
   mockedFetchReceipts
     .mockRejectedValueOnce(new Error('Unable to load receipts right now.'))
     .mockResolvedValueOnce([sampleReceipt]);
@@ -70,7 +78,7 @@ test('shows a retry action after a fetch failure', async () => {
     await screen.findByText('Unable to load receipts right now.'),
   ).toBeTruthy();
 
-  fireEvent.press(screen.getByTestId('retry-receipts-button'));
+  await user.press(screen.getByTestId('retry-receipts-button'));
 
   expect(await screen.findByText('receipt-001.jpg')).toBeTruthy();
 });

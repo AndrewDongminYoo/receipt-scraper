@@ -4,12 +4,21 @@
 
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { render, screen, userEvent } from '@testing-library/react-native';
 import App from '../App';
 import { RootStack } from '../src/navigation/RootNavigator';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 
 const RootStackComponent = RootStack.getComponent();
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
+});
 
 test('App renders without crashing with the Day 3 providers mounted', () => {
   render(<App />);
@@ -37,13 +46,15 @@ test.each([
 ])(
   'navigates from Home to %s',
   async (buttonTitle, screenTestID, titleTestID) => {
+    const user = userEvent.setup();
+
     renderWithQueryClient(
       <NavigationContainer>
         <RootStackComponent />
       </NavigationContainer>,
     );
 
-    fireEvent.press(screen.getByText(buttonTitle));
+    await user.press(screen.getByText(buttonTitle));
 
     expect(await screen.findByTestId(screenTestID)).toBeTruthy();
     expect(screen.getByTestId(titleTestID)).toHaveTextContent(buttonTitle);
