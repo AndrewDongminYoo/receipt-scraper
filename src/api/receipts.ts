@@ -9,6 +9,7 @@ import type {
   ReceiptItem,
   ReceiptUploadResponse,
 } from '../types/receipt';
+import { wait } from '../utils/wait';
 
 const LIST_DELAY_MS = 450;
 const UPLOAD_DELAY_MS = 900;
@@ -26,9 +27,6 @@ export interface UploadReceiptParams {
 const uploadClient = axios.create({
   baseURL: 'https://mock.receipt-scraper.local',
 });
-
-const wait = (durationMs: number) =>
-  new Promise<void>(resolve => setTimeout(() => resolve(), durationMs));
 
 function getHeaderValue(
   config: InternalAxiosRequestConfig,

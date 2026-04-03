@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { fetchReceipts, receiptQueryKeys } from '../api/receipts';
 import type { ReceiptItem } from '../types/receipt';
+import { formatTimestamp } from '../utils/formatTimestamp';
 
 function getReceiptsErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -17,10 +18,6 @@ function getReceiptsErrorMessage(error: unknown) {
   }
 
   return 'Unable to load receipts right now.';
-}
-
-function formatPurchasedAt(purchasedAt: string) {
-  return purchasedAt.replace('T', ' ').slice(0, 16);
 }
 
 function renderReceiptItem({ item }: { item: ReceiptItem }) {
@@ -32,7 +29,7 @@ function renderReceiptItem({ item }: { item: ReceiptItem }) {
       <Text style={styles.receiptMeta}>{item.storeName}</Text>
       <Text style={styles.receiptMeta}>Status: {item.status}</Text>
       <Text style={styles.receiptMeta}>
-        Uploaded: {formatPurchasedAt(item.purchasedAt)}
+        Uploaded: {formatTimestamp(item.purchasedAt)}
       </Text>
     </View>
   );
