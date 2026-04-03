@@ -41,12 +41,13 @@ The target app is a minimal receipt rewards mini-clone with this flow:
 
 ## Current Status
 
-The repository is still near the start of the sprint.
+The repository has completed Day 2 of the sprint.
 
-- Day 0 is effectively complete: the React Native 0.84.1 app runs on both iOS and Android.
-- `App.tsx` currently renders a minimal placeholder screen wrapped in `SafeAreaProvider`.
-- `src/` has been scaffolded with placeholder directories, but the actual product flow has not been implemented yet.
-- The only non-core runtime dependency currently in use is `react-native-safe-area-context`.
+- Day 0 is complete: the React Native 0.84.1 app runs on both iOS and Android.
+- Day 1 is complete: the app ships with a 5-screen native-stack navigation shell.
+- Day 2 is complete: `ReceiptUploadScreen` now selects a photo, previews it, and triggers a mock multipart upload request with visible success, failure, and retry states.
+- `App.tsx` mounts the app root, `SafeAreaProvider`, and the static root navigator.
+- The app-level runtime dependencies now include React Navigation 7, `axios`, `react-native-image-picker`, and `react-native-screens`.
 
 ## Fixed Delivery Plan
 
@@ -110,23 +111,25 @@ Use React Native CLI, not Expo, because the point is to practice the environment
 
 | Package                          | Purpose               |
 | -------------------------------- | --------------------- |
+| `@react-navigation/native`       | Navigation container  |
+| `@react-navigation/native-stack` | Native stack routing  |
+| `axios`                          | Mock HTTP uploads     |
 | `react-native`                   | Core mobile framework |
 | `react`                          | UI runtime            |
+| `react-native-image-picker`      | Photo library access  |
 | `react-native-safe-area-context` | Safe area handling    |
+| `react-native-screens`           | Native screen support |
 | `typescript`                     | Type checking         |
 
 ### Planned Later
 
 Only add dependencies when the corresponding day requires them.
 
-| Package                                                       | Planned Day | Purpose                  |
-| ------------------------------------------------------------- | ----------- | ------------------------ |
-| `@react-navigation/native` + `@react-navigation/native-stack` | Day 1       | Navigation               |
-| `axios`                                                       | Day 2       | HTTP client              |
-| `react-native-image-picker`                                   | Day 2       | Camera or gallery access |
-| `@tanstack/react-query`                                       | Day 3       | Server state             |
-| `react-hook-form`                                             | Day 4       | Form handling            |
-| `zod`                                                         | Day 4       | Validation               |
+| Package                 | Planned Day | Purpose       |
+| ----------------------- | ----------- | ------------- |
+| `@tanstack/react-query` | Day 3       | Server state  |
+| `react-hook-form`       | Day 4       | Form handling |
+| `zod`                   | Day 4       | Validation    |
 
 ## Architecture Rules
 
@@ -146,7 +149,14 @@ Current entry points:
 - `index.js`
 - `App.tsx`
 
-Target `src/` layout:
+Current feature-bearing `src/` areas:
+
+- `src/navigation/`
+- `src/screens/`
+- `src/api/`
+- `src/types/`
+
+Target `src/` layout as later days require it:
 
 ```text
 src/
@@ -162,7 +172,7 @@ src/
   utils/
 ```
 
-The structure should grow with the features. Empty folders are not the goal; working flows are.
+The structure should grow only when features require it. Empty folders are not the goal; working flows are.
 
 ## Running the Project
 
@@ -216,8 +226,8 @@ The first expansion points would be:
 
 These trade-offs are expected for the prototype phase:
 
-- The `src/` structure is scaffolded early and may need trimming or reshaping once real feature code exists.
-- The app currently has no real feature flow yet, so the documentation leads the implementation rather than reflecting completed product behavior.
+- The Day 2 upload path uses a mock `axios` adapter instead of a real backend, so upload success and failure are deterministic practice flows rather than production networking.
+- The rest of the product flow is still placeholder UI until Day 3 and Day 4 land.
 - Networking, navigation, validation, and list behavior will remain intentionally simple even after implementation because the goal is confidence, not completeness.
 
 ## Reference Documents

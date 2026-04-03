@@ -12,6 +12,8 @@ Autolayout
 AUTORELEASING
 autoresizing
 Autoresizing
+avds
+axios
 bigdecimal
 bikeshedding
 BITCODE
@@ -70,6 +72,7 @@ reactjs
 readarray
 receiptscraper
 Riverpod
+rnscreens
 rootproject
 RUNPATH
 SCRIPTDIR
@@ -78,9 +81,11 @@ setlocal
 shellcheck
 shellness
 shfmt
+simctl
 SRCROOT
 subviews
 Subviews
+swmansion
 tappable
 Testables
 xcassets
@@ -89,6 +94,7 @@ xcconfig
 xcfilelist
 xcodeproj
 xcprivacy
+xcrun
 xctest
 xcuserdata
 xcuserstate

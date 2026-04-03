@@ -12,10 +12,12 @@ This is **not** a production app. Decisions should favour speed of execution and
 
 ## Current State
 
-- **Phase**: Day 0 complete — basic RN 0.84.1 template running on iOS and Android.
-- `App.tsx` renders a minimal placeholder screen inside `SafeAreaProvider`.
-- `src/` has been scaffolded with placeholder directories, but feature implementation has not started yet.
-- Runtime dependencies are still close to the template baseline. The only app-level addition beyond core React Native is `react-native-safe-area-context`.
+- **Phase**: Day 2 complete — the app now has a 5-screen navigation shell plus a working receipt upload practice flow.
+- `App.tsx` renders the app root inside `SafeAreaProvider` and mounts the static root navigator.
+- `src/navigation/RootNavigator.tsx` defines the shared native-stack routes and titles.
+- `src/screens/ReceiptUploadScreen.tsx` now supports photo-library selection, preview, mock upload, failure simulation, and retry handling.
+- `src/api/receipts.ts` uses `axios` with a mock adapter so Day 2 can exercise a multipart-style request without a real backend.
+- Runtime dependencies now include React Navigation 7, `axios`, `react-native-image-picker`, and `react-native-screens`.
 
 ---
 
@@ -25,21 +27,23 @@ This is **not** a production app. Decisions should favour speed of execution and
 
 | Package                          | Scope | Purpose          |
 | -------------------------------- | ----- | ---------------- |
+| `@react-navigation/native`       | prod  | Navigation shell |
+| `@react-navigation/native-stack` | prod  | Native stack     |
+| `axios`                          | prod  | Mock uploads     |
 | `react-native` 0.84.1            | prod  | Core framework   |
 | `react` 19.2.3                   | prod  | UI runtime       |
+| `react-native-image-picker`      | prod  | Photo picker     |
 | `react-native-safe-area-context` | prod  | Safe area insets |
+| `react-native-screens`           | prod  | Native screens   |
 | `typescript` 5.8.3               | dev   | Type checking    |
 
 ### Planned (add only when the day's scope requires it)
 
-| Package                                                       | Day   | Purpose                      |
-| ------------------------------------------------------------- | ----- | ---------------------------- |
-| `@react-navigation/native` + `@react-navigation/native-stack` | Day 1 | Stack navigation             |
-| `@tanstack/react-query`                                       | Day 3 | Server state / data fetching |
-| `react-hook-form`                                             | Day 4 | Form handling                |
-| `zod`                                                         | Day 4 | Schema validation            |
-| `axios`                                                       | Day 2 | HTTP client                  |
-| `react-native-image-picker`                                   | Day 2 | Camera / gallery             |
+| Package                 | Day   | Purpose                      |
+| ----------------------- | ----- | ---------------------------- |
+| `@tanstack/react-query` | Day 3 | Server state / data fetching |
+| `react-hook-form`       | Day 4 | Form handling                |
+| `zod`                   | Day 4 | Schema validation            |
 
 Do not install any of these ahead of schedule.
 
