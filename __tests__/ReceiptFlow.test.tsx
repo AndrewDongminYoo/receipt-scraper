@@ -6,7 +6,7 @@ import {
   within,
 } from '@testing-library/react-native';
 import {
-  launchImageLibrary,
+  launchCamera,
   type Asset,
   type ImagePickerResponse,
 } from 'react-native-image-picker';
@@ -15,8 +15,21 @@ import ReceiptListScreen from '../src/screens/ReceiptListScreen';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 import type { ReceiptItem } from '../src/types/receipt';
 
-const mockedLaunchImageLibrary = launchImageLibrary as jest.MockedFunction<
-  typeof launchImageLibrary
+jest.mock('../src/api/ocr', () => ({
+  recognizeReceiptText: jest.fn().mockResolvedValue({
+    text: 'TOTAL $12.99 TAX $1.00 CASH',
+    isEmpty: false,
+  }),
+  OcrError: class OcrError extends Error {},
+}));
+
+jest.mock('../src/utils/featureFlags', () => ({
+  getUseLibraryPicker: jest.fn().mockResolvedValue(false),
+  setUseLibraryPicker: jest.fn().mockResolvedValue(undefined),
+}));
+
+const mockedLaunchCamera = launchCamera as jest.MockedFunction<
+  typeof launchCamera
 >;
 
 const mockAsset: Asset = {
@@ -75,7 +88,7 @@ beforeEach(() => {
   jest.useFakeTimers();
   consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   mockReceiptStore = [];
-  mockedLaunchImageLibrary.mockResolvedValue({
+  mockedLaunchCamera.mockResolvedValue({
     assets: [mockAsset],
   } as ImagePickerResponse);
 });
