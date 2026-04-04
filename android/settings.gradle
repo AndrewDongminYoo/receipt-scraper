@@ -1,7 +1,36 @@
+import org.gradle.api.GradleException
+
+def resolveNodeBinary() {
+    def envNodeBinary = System.getenv('NODE_BINARY')
+    if (envNodeBinary?.trim()) {
+        return envNodeBinary.trim()
+    }
+
+    def process =
+        new ProcessBuilder(['/bin/zsh', '-lc', 'source ~/.zshrc >/dev/null 2>&1; command -v node'])
+            .directory(rootDir)
+            .redirectErrorStream(true)
+            .start()
+    def resolvedNode = process.inputStream.text.trim()
+    process.waitFor()
+
+    if (process.exitValue() == 0 && resolvedNode) {
+        return resolvedNode
+    }
+
+    throw new GradleException('Could not resolve the Node.js binary. Set NODE_BINARY in your environment.')
+}
+
 pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
 plugins { id("com.facebook.react.settings")
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0' }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+
+def nodeBinary = resolveNodeBinary()
+def reactNativeCli = file('../node_modules/@react-native-community/cli/build/bin.js')
+
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex ->
+    ex.autolinkLibrariesFromCommand([nodeBinary, reactNativeCli.absolutePath, 'config'])
+}
 rootProject.name = 'receiptScraper'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
