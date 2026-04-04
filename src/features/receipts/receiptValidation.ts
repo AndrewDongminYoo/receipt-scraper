@@ -13,7 +13,6 @@ const ITEM_HEADER_PATTERN =
   /(상품명|품목|description|item).*(단가|unit).*(수량|qty).*(금액|amount)|(item|description).*(qty).*(unit|price).*(amount)/i;
 const SUMMARY_LINE_PATTERN =
   /(합계|총액|총금액|결제|대상금액|받은금액|거스름돈|부가세|과세물품|면세물품|공급가액|영수증|교환|승인|거래|매출|현금영수증|카드|일시불|할부|tax|vat|total|subtotal|receipt|cash|card|visa|mastercard|invoice)/i;
-const STORE_LABEL_PATTERN = /(매장명|상호|점포명|지점|store|mart)/i;
 const PAYMENT_METHOD_PATTERN =
   /(카드|현금|간편결제|pay|cash|card|visa|mastercard|일시불|할부)/i;
 const BUSINESS_NUMBER_PATTERN = /\b\d{3}-\d{2}-\d{5}\b/;
@@ -283,7 +282,9 @@ function parseItemDetailTokens(
   );
 
   for (let index = 0; index <= filtered.length - 3; index += 1) {
-    const [first, second, third] = filtered.slice(index, index + 3);
+    const first = filtered[index];
+    const second = filtered[index + 1];
+    const third = filtered[index + 2];
 
     if (isMoneyToken(first) && isQuantityToken(second) && isMoneyToken(third)) {
       return {
@@ -304,7 +305,8 @@ function parseItemDetailTokens(
 
   if (options?.allowInferredAmount && filtered.length >= 2) {
     for (let index = 0; index <= filtered.length - 2; index += 1) {
-      const [first, second] = filtered.slice(index, index + 2);
+      const first = filtered[index];
+      const second = filtered[index + 1];
 
       if (isMoneyToken(first) && isQuantityToken(second)) {
         return {
@@ -519,6 +521,24 @@ function splitSparseItemNameAndInlineDetails(line: string): {
   };
 }
 
+function collectPreviousDetailLines(
+  lines: string[],
+  index: number,
+  detailTokens: string[],
+  consumedIndices: number[],
+): void {
+  for (let offset = 2; offset >= 1; offset -= 1) {
+    const previousLine = lines[index - offset];
+
+    if (!previousLine || !isLikelyDetailLine(previousLine)) {
+      continue;
+    }
+
+    detailTokens.unshift(...tokenizeLine(previousLine));
+    consumedIndices.unshift(index - offset);
+  }
+}
+
 function parseSparseItemLine(
   lines: string[],
   index: number,
@@ -540,18 +560,7 @@ function parseSparseItemLine(
   const detailTokens = [...inlineDetailTokens];
   const consumedIndices = [index];
 
-  for (let offset = 2; offset >= 1; offset -= 1) {
-    const previousLine = lines[index - offset];
-
-    if (!previousLine) {
-      continue;
-    }
-
-    if (isLikelyDetailLine(previousLine)) {
-      detailTokens.unshift(...tokenizeLine(previousLine));
-      consumedIndices.unshift(index - offset);
-    }
-  }
+  collectPreviousDetailLines(lines, index, detailTokens, consumedIndices);
 
   for (let offset = 1; offset <= 3; offset += 1) {
     const nextLine = lines[index + offset];
@@ -584,12 +593,15 @@ function parseSparseItemLine(
     consumedIndices.push(index + offset);
   }
 
-  const detailEvidenceExists = detailTokens.some(
-    token =>
-      isBarcodeToken(token.replace(/^[#*-]+/, '')) ||
-      isQuantityToken(token.replace(/^[#*-]+/, '')) ||
-      isMoneyToken(token.replace(/^[#*-]+/, '')),
-  );
+  const detailEvidenceExists = detailTokens.some(token => {
+    const compactToken = token.replace(/^[#*-]+/, '');
+
+    return (
+      isBarcodeToken(compactToken) ||
+      isQuantityToken(compactToken) ||
+      isMoneyToken(compactToken)
+    );
+  });
 
   if (!detailEvidenceExists) {
     return null;
@@ -632,16 +644,7 @@ function parseSummaryAmountItemLine(
   const detailTokens: string[] = [...tokenizeLine(amountLine)];
   const consumedIndices = [index, index + 2];
 
-  for (let offset = 2; offset >= 1; offset -= 1) {
-    const previousLine = lines[index - offset];
-
-    if (!previousLine || !isLikelyDetailLine(previousLine)) {
-      continue;
-    }
-
-    detailTokens.unshift(...tokenizeLine(previousLine));
-    consumedIndices.unshift(index - offset);
-  }
+  collectPreviousDetailLines(lines, index, detailTokens, consumedIndices);
 
   const details = parseItemDetailTokens(detailTokens, {
     allowInferredAmount: true,
@@ -703,7 +706,6 @@ export function normalizeReceiptText(text: string): string {
 
 export function extractReceiptMetadata(text: string): ReceiptExtractedMetadata {
   const lines = splitReceiptLines(text);
-  const normalized = normalizeReceiptText(text);
   const lineItems: ReceiptLineItem[] = [];
   const consumedIndices = new Set<number>();
   const itemSectionStartIndex = lines.findIndex(isItemHeaderLine);
@@ -781,7 +783,7 @@ export function extractReceiptMetadata(text: string): ReceiptExtractedMetadata {
     paymentMethod: paymentLine?.match(PAYMENT_METHOD_PATTERN)?.[0],
     purchaseDateTime: extractPurchaseDateTime(lines),
     storeAddress: extractStoreAddress(lines),
-    storeName: STORE_LABEL_PATTERN.test(normalized) ? storeLine : storeLine,
+    storeName: storeLine,
     totalAmount,
     vatAmount,
   };
