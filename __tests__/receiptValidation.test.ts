@@ -87,3 +87,37 @@ test('extracts metadata and line items from Korean mart receipts', () => {
     },
   ]);
 });
+
+test('accepts OCR text when receipt keywords are split by spaces and line items span multiple lines', () => {
+  const sampleOcrText = [
+    '이마트 역삼점 T:(02) 6908-1234',
+    '206-86-50913 한채양',
+    '서울특별시 강남구 역삼로 310',
+    '영수증 지참시 교환/환불 불가',
+    '[구 매]2026-03-14 15:19 POS:7911-5689',
+    '상품 명',
+    '01 도스코파스까버네쇼비',
+    '8809642308251 4,900 6 29,400',
+    '04 하리보 스타믹스 250g',
+    '4001686726013 5,980',
+    '부가',
+    '단 가수량 금 액',
+    '과세 물 품',
+    '카드결제(IC)',
+    '3,760',
+    '일시불 / 41,360',
+  ].join('\n');
+
+  const metadata = extractReceiptMetadata(sampleOcrText);
+
+  expect(looksLikeReceiptText(sampleOcrText)).toBe(true);
+  expect(metadata.storeName).toBe('이마트 역삼점 T:(02) 6908-1234');
+  expect(metadata.paymentMethod).toBe('카드');
+  expect(metadata.totalAmount).toBe('41,360');
+  expect(metadata.lineItems).toContainEqual({
+    amount: '29,400',
+    name: '도스코파스까버네쇼비',
+    quantity: '6',
+    unitPrice: '4,900',
+  });
+});
