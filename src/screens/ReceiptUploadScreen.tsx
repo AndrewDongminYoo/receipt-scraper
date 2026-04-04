@@ -7,10 +7,15 @@ import type {
   ImageLibraryOptions,
 } from 'react-native-image-picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import DocumentScanner, {
+  ResponseType,
+  ScanDocumentResponseStatus,
+} from 'react-native-document-scanner-plugin';
 import {
   Button,
   Image,
   NativeModules,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -80,6 +85,23 @@ function getUploadErrorMessage(error: unknown) {
 
 type CaptureFailureKind = 'cancelled' | 'ocr_failed' | 'wrong_type';
 
+function createAssetFromUri(uri: string): Asset {
+  const fileName =
+    decodeURIComponent(uri).split('/').pop() || 'scanned-receipt.jpg';
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  return {
+    fileName,
+    type:
+      extension === 'png'
+        ? 'image/png'
+        : extension === 'heic' || extension === 'heif'
+          ? 'image/heic'
+          : 'image/jpeg',
+    uri,
+  };
+}
+
 function ReceiptUploadScreen() {
   const queryClient = useQueryClient();
   const [selectedAsset, setSelectedAsset] = React.useState<Asset | null>(null);
@@ -113,25 +135,83 @@ function ReceiptUploadScreen() {
           ? `Ready to upload ${selectedAsset.fileName || 'the captured receipt'}.`
           : 'Capture a receipt using the camera to start the upload flow.';
 
+  const captureWithDocumentScanner =
+    React.useCallback(async (): Promise<Asset | null> => {
+      try {
+        const scanned = await DocumentScanner.scanDocument({
+          croppedImageQuality: 95,
+          responseType: ResponseType.ImageFilePath,
+        });
+
+        if (
+          scanned.status === ScanDocumentResponseStatus.Cancel ||
+          !scanned.scannedImages?.length
+        ) {
+          return null;
+        }
+
+        return createAssetFromUri(scanned.scannedImages[0]);
+      } catch {
+        return null;
+      }
+    }, []);
+
   const handleCaptureReceipt = async () => {
     setCaptureFailure(null);
     uploadMutation.reset();
     setOcrText('');
 
-    const result = useLibraryPicker
-      ? await launchImageLibrary(imageLibraryOptions)
-      : await launchCamera(cameraOptions);
+    let nextAsset: Asset;
 
-    if (result.didCancel) {
-      return;
+    if (useLibraryPicker) {
+      const result = await launchImageLibrary(imageLibraryOptions);
+
+      if (result.didCancel) {
+        return;
+      }
+
+      if (result.errorCode || !result.assets?.[0]?.uri) {
+        setCaptureFailure('cancelled');
+        return;
+      }
+
+      nextAsset = result.assets[0];
+    } else {
+      if (Platform.OS === 'ios') {
+        const scannedAsset = await captureWithDocumentScanner();
+
+        if (scannedAsset) {
+          nextAsset = scannedAsset;
+        } else {
+          const fallbackResult = await launchCamera(cameraOptions);
+
+          if (fallbackResult.didCancel) {
+            return;
+          }
+
+          if (fallbackResult.errorCode || !fallbackResult.assets?.[0]?.uri) {
+            setCaptureFailure('cancelled');
+            return;
+          }
+
+          nextAsset = fallbackResult.assets[0];
+        }
+      } else {
+        const result = await launchCamera(cameraOptions);
+
+        if (result.didCancel) {
+          return;
+        }
+
+        if (result.errorCode || !result.assets?.[0]?.uri) {
+          setCaptureFailure('cancelled');
+          return;
+        }
+
+        nextAsset = result.assets[0];
+      }
     }
 
-    if (result.errorCode || !result.assets?.[0]?.uri) {
-      setCaptureFailure('cancelled');
-      return;
-    }
-
-    const nextAsset = result.assets[0];
     setSelectedAsset(nextAsset);
 
     let recognition: OcrResult;

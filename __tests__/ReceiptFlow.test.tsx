@@ -5,6 +5,8 @@ import {
   waitFor,
   within,
 } from '@testing-library/react-native';
+import DocumentScanner from 'react-native-document-scanner-plugin';
+import { Platform } from 'react-native';
 import {
   launchCamera,
   type Asset,
@@ -14,6 +16,21 @@ import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
 import ReceiptListScreen from '../src/screens/ReceiptListScreen';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 import type { ReceiptItem } from '../src/types/receipt';
+
+jest.mock('react-native-document-scanner-plugin', () => ({
+  __esModule: true,
+  ResponseType: {
+    Base64: 'base64',
+    ImageFilePath: 'imageFilePath',
+  },
+  ScanDocumentResponseStatus: {
+    Success: 'success',
+    Cancel: 'cancel',
+  },
+  default: {
+    scanDocument: jest.fn(),
+  },
+}));
 
 jest.mock('../src/api/ocr', () => ({
   recognizeReceiptText: jest.fn().mockResolvedValue({
@@ -31,6 +48,9 @@ jest.mock('../src/utils/featureFlags', () => ({
 const mockedLaunchCamera = launchCamera as jest.MockedFunction<
   typeof launchCamera
 >;
+const mockedScanDocument = DocumentScanner.scanDocument as jest.MockedFunction<
+  typeof DocumentScanner.scanDocument
+>;
 
 const mockAsset: Asset = {
   fileName: 'receipt-001.jpg',
@@ -41,6 +61,7 @@ const mockAsset: Asset = {
 
 let mockReceiptStore: ReceiptItem[] = [];
 let consoleErrorSpy: jest.SpyInstance;
+const originalPlatformOS = Platform.OS;
 
 jest.mock('../src/api/receipts', () => ({
   fetchReceipts: jest.fn(async () => mockReceiptStore),
@@ -87,16 +108,25 @@ function ReceiptFlowHarness() {
 beforeEach(() => {
   jest.useFakeTimers();
   consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  Object.defineProperty(Platform, 'OS', {
+    configurable: true,
+    value: 'ios',
+  });
   mockReceiptStore = [];
   mockedLaunchCamera.mockResolvedValue({
     assets: [mockAsset],
   } as ImagePickerResponse);
+  mockedScanDocument.mockRejectedValue(new Error('scanner unavailable'));
 });
 
 afterEach(() => {
   jest.clearAllTimers();
   jest.useRealTimers();
   consoleErrorSpy.mockRestore();
+  Object.defineProperty(Platform, 'OS', {
+    configurable: true,
+    value: originalPlatformOS,
+  });
   jest.clearAllMocks();
 });
 

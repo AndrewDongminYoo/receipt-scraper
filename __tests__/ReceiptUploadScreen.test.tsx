@@ -1,5 +1,9 @@
 import React from 'react';
 import { screen, userEvent, waitFor } from '@testing-library/react-native';
+import DocumentScanner, {
+  ScanDocumentResponseStatus,
+} from 'react-native-document-scanner-plugin';
+import { Platform } from 'react-native';
 import {
   launchCamera,
   launchImageLibrary,
@@ -12,6 +16,21 @@ import { recognizeReceiptText } from '../src/api/ocr';
 import { getUseLibraryPicker } from '../src/utils/featureFlags';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 import type { ReceiptItem, ReceiptUploadResponse } from '../src/types/receipt';
+
+jest.mock('react-native-document-scanner-plugin', () => ({
+  __esModule: true,
+  ResponseType: {
+    Base64: 'base64',
+    ImageFilePath: 'imageFilePath',
+  },
+  ScanDocumentResponseStatus: {
+    Success: 'success',
+    Cancel: 'cancel',
+  },
+  default: {
+    scanDocument: jest.fn(),
+  },
+}));
 
 jest.mock('../src/api/receipts', () => ({
   receiptQueryKeys: {
@@ -35,6 +54,9 @@ const mockedLaunchCamera = launchCamera as jest.MockedFunction<
 >;
 const mockedLaunchImageLibrary = launchImageLibrary as jest.MockedFunction<
   typeof launchImageLibrary
+>;
+const mockedScanDocument = DocumentScanner.scanDocument as jest.MockedFunction<
+  typeof DocumentScanner.scanDocument
 >;
 const mockedUploadReceipt = uploadReceipt as jest.MockedFunction<
   typeof uploadReceipt
@@ -73,6 +95,14 @@ const successResponse: ReceiptUploadResponse = {
 const validReceiptOcrText = 'TOTAL $12.99 TAX $1.00 CASH';
 
 let consoleErrorSpy: jest.SpyInstance;
+const originalPlatformOS = Platform.OS;
+
+function setPlatformOS(os: 'android' | 'ios') {
+  Object.defineProperty(Platform, 'OS', {
+    configurable: true,
+    value: os,
+  });
+}
 
 function expectNoActWarnings() {
   expect(
@@ -87,10 +117,12 @@ function expectNoActWarnings() {
 beforeEach(() => {
   jest.useFakeTimers();
   consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  setPlatformOS('ios');
   mockedGetUseLibraryPicker.mockResolvedValue(false);
   mockedLaunchCamera.mockResolvedValue({
     assets: [mockAsset],
   } as ImagePickerResponse);
+  mockedScanDocument.mockRejectedValue(new Error('scanner unavailable'));
   mockedRecognizeReceiptText.mockResolvedValue({
     text: validReceiptOcrText,
     isEmpty: false,
@@ -102,6 +134,10 @@ afterEach(() => {
   jest.clearAllTimers();
   jest.useRealTimers();
   consoleErrorSpy.mockRestore();
+  Object.defineProperty(Platform, 'OS', {
+    configurable: true,
+    value: originalPlatformOS,
+  });
   jest.clearAllMocks();
 });
 
@@ -247,6 +283,57 @@ test('uses launchImageLibrary when feature flag is true', async () => {
   await waitFor(() => {
     expect(mockedLaunchImageLibrary).toHaveBeenCalledTimes(1);
     expect(mockedLaunchCamera).not.toHaveBeenCalled();
+  });
+  expectNoActWarnings();
+});
+
+test('uses DocumentScanner on ios and previews the first scanned page', async () => {
+  const user = userEvent.setup();
+
+  setPlatformOS('ios');
+  mockedScanDocument.mockResolvedValueOnce({
+    scannedImages: [
+      'file:///tmp/scan-page-1.jpg',
+      'file:///tmp/scan-page-2.jpg',
+    ],
+    status: ScanDocumentResponseStatus.Success,
+  });
+
+  renderWithQueryClient(<ReceiptUploadScreen />);
+
+  await user.press(screen.getByTestId('pick-receipt-button'));
+
+  const previewImage = await screen.findByTestId('receipt-preview-image');
+  expect(previewImage.props.source).toEqual({
+    uri: 'file:///tmp/scan-page-1.jpg',
+  });
+  expect(mockedLaunchCamera).not.toHaveBeenCalled();
+  expect(screen.getByTestId('upload-receipt-button')).toBeEnabled();
+  expectNoActWarnings();
+});
+
+test('falls back to launchCamera when ios document scanner throws', async () => {
+  const user = userEvent.setup();
+  const fallbackAsset: Asset = {
+    fileName: 'fallback-receipt.jpg',
+    type: 'image/jpeg',
+    uri: 'file:///tmp/fallback-receipt.jpg',
+  };
+
+  setPlatformOS('ios');
+  mockedScanDocument.mockRejectedValueOnce(new Error('scanner failed'));
+  mockedLaunchCamera.mockResolvedValueOnce({
+    assets: [fallbackAsset],
+  } as ImagePickerResponse);
+
+  renderWithQueryClient(<ReceiptUploadScreen />);
+
+  await user.press(screen.getByTestId('pick-receipt-button'));
+
+  const previewImage = await screen.findByTestId('receipt-preview-image');
+  expect(mockedLaunchCamera).toHaveBeenCalledTimes(1);
+  expect(previewImage.props.source).toEqual({
+    uri: 'file:///tmp/fallback-receipt.jpg',
   });
   expectNoActWarnings();
 });
