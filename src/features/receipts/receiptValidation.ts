@@ -73,34 +73,95 @@ function tokenizeLine(line: string): string[] {
   return line.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
 }
 
+function parseAmountNumber(value: string): number | null {
+  const normalized = value.replace(/[^\d.]/g, '');
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatAmountNumber(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function inferAmount(unitPrice: string, quantity: string): string | undefined {
+  const parsedUnitPrice = parseAmountNumber(unitPrice);
+  const parsedQuantity = Number(quantity);
+
+  if (!parsedUnitPrice || !Number.isFinite(parsedQuantity)) {
+    return undefined;
+  }
+
+  return formatAmountNumber(parsedUnitPrice * parsedQuantity);
+}
+
 function parseItemDetailTokens(
   tokens: string[],
+  options?: {
+    allowInferredAmount?: boolean;
+    allowInferredQuantity?: boolean;
+  },
 ): Omit<ReceiptLineItem, 'name'> | null {
   const filtered = tokens.filter(
     token => !isBarcodeToken(token) && !isPromotionToken(token),
   );
 
-  if (filtered.length < 3) {
-    return null;
-  }
-
   const tail = filtered.slice(-3);
   const [first, second, third] = tail;
 
-  if (isMoneyToken(first) && isQuantityToken(second) && isMoneyToken(third)) {
-    return {
-      amount: third,
-      quantity: second,
-      unitPrice: first,
-    };
+  if (filtered.length >= 3) {
+    if (isMoneyToken(first) && isQuantityToken(second) && isMoneyToken(third)) {
+      return {
+        amount: third,
+        quantity: second,
+        unitPrice: first,
+      };
+    }
+
+    if (isQuantityToken(first) && isMoneyToken(second) && isMoneyToken(third)) {
+      return {
+        amount: third,
+        quantity: first,
+        unitPrice: second,
+      };
+    }
   }
 
-  if (isQuantityToken(first) && isMoneyToken(second) && isMoneyToken(third)) {
-    return {
-      amount: third,
-      quantity: first,
-      unitPrice: second,
-    };
+  if (options?.allowInferredAmount && filtered.length >= 2) {
+    if (isMoneyToken(first) && isQuantityToken(second)) {
+      return {
+        amount: inferAmount(first, second),
+        quantity: second,
+        unitPrice: first,
+      };
+    }
+
+    if (isQuantityToken(first) && isMoneyToken(second)) {
+      return {
+        amount: inferAmount(second, first),
+        quantity: first,
+        unitPrice: second,
+      };
+    }
+  }
+
+  if (options?.allowInferredQuantity) {
+    const firstMoneyToken = filtered.find(token => isMoneyToken(token));
+
+    if (firstMoneyToken) {
+      return {
+        amount: firstMoneyToken,
+        quantity: '1',
+        unitPrice: firstMoneyToken,
+      };
+    }
   }
 
   return null;
@@ -161,33 +222,49 @@ function parseSplitItemLine(
     return null;
   }
 
-  for (let offset = 1; offset <= 3; offset += 1) {
+  const detailTokens: string[] = [];
+  const consumedIndices = [index];
+
+  for (let offset = 1; offset <= 5; offset += 1) {
     const detailLine = lines[index + offset];
 
+    if (!detailLine) {
+      break;
+    }
+
+    const normalizedDetailLine = detailLine.replace(/\s+/g, ' ').trim();
+
+    if (/^\d{1,2}\s+/.test(normalizedDetailLine)) {
+      break;
+    }
+
     if (
-      !detailLine ||
-      isSummaryLine(detailLine) ||
-      isItemHeaderLine(detailLine)
+      isSummaryLine(normalizedDetailLine) ||
+      isItemHeaderLine(normalizedDetailLine)
     ) {
-      continue;
+      break;
     }
 
-    const details = parseItemDetailTokens(tokenizeLine(detailLine));
-
-    if (!details) {
-      continue;
-    }
-
-    return {
-      consumedIndices: [index, index + offset],
-      item: {
-        name,
-        ...details,
-      },
-    };
+    detailTokens.push(...tokenizeLine(normalizedDetailLine));
+    consumedIndices.push(index + offset);
   }
 
-  return null;
+  const details = parseItemDetailTokens(detailTokens, {
+    allowInferredAmount: true,
+    allowInferredQuantity: true,
+  });
+
+  if (!details) {
+    return null;
+  }
+
+  return {
+    consumedIndices,
+    item: {
+      name,
+      ...details,
+    },
+  };
 }
 
 function findAmountNearKeyword(
