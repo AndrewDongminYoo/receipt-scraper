@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
-    "start": "react-native start --reset-cache",
+    "start": "react-native start",
+    "start:reset": "bash scripts/start-metro.sh",
     "test": "jest"
   },
   "dependencies": {
