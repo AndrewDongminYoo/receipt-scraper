@@ -1,11 +1,16 @@
 import * as React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import type { Asset, ImageLibraryOptions } from 'react-native-image-picker';
-import { launchImageLibrary } from 'react-native-image-picker';
+import type {
+  Asset,
+  CameraOptions,
+  ImageLibraryOptions,
+} from 'react-native-image-picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import {
   Button,
   Image,
+  NativeModules,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,18 +21,34 @@ import {
   uploadReceipt,
   type UploadReceiptParams,
 } from '../api/receipts';
+import { recognizeReceiptText, type OcrResult } from '../api/ocr';
+import {
+  getUseLibraryPicker,
+  setUseLibraryPicker,
+} from '../utils/featureFlags';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
 
-const imagePickerOptions: ImageLibraryOptions = {
+const cameraOptions: CameraOptions = {
+  mediaType: 'photo',
+  quality: 0.8,
+  saveToPhotos: false,
+};
+
+const imageLibraryOptions: ImageLibraryOptions = {
   mediaType: 'photo',
   quality: 0.8,
   selectionLimit: 1,
 };
 
-const defaultPickerMessage =
-  'Choose a receipt image from your library to start the upload flow.';
+const PRICE_PATTERN = /\$\d+[.,]\d{2}|\d+[.,]\d{2}\s*(USD|GBP|EUR|KRW|JPY)?/i;
+const RECEIPT_KEYWORD_PATTERN =
+  /\b(total|subtotal|tax|gst|vat|receipt|invoice|cashier|transaction|qty|cash|card|visa|mastercard)\b/i;
+
+function looksLikeReceipt(text: string): boolean {
+  return PRICE_PATTERN.test(text) && RECEIPT_KEYWORD_PATTERN.test(text);
+}
 
 function formatFileSize(fileSize?: number) {
   if (!fileSize) {
@@ -57,16 +78,23 @@ function getUploadErrorMessage(error: unknown) {
   return 'Receipt upload failed. Please try again.';
 }
 
+type CaptureFailureKind = 'cancelled' | 'ocr_failed' | 'wrong_type';
+
 function ReceiptUploadScreen() {
   const queryClient = useQueryClient();
   const [selectedAsset, setSelectedAsset] = React.useState<Asset | null>(null);
   const [simulateFailure, setSimulateFailure] = React.useState(false);
-  const [pickerMessage, setPickerMessage] =
-    React.useState(defaultPickerMessage);
+  const [ocrText, setOcrText] = React.useState('');
+  const [captureFailure, setCaptureFailure] =
+    React.useState<CaptureFailureKind | null>(null);
+  const [useLibraryPicker, setUseLibraryPickerState] = React.useState(false);
+
+  React.useEffect(() => {
+    getUseLibraryPicker().then(value => setUseLibraryPickerState(value));
+  }, []);
 
   const uploadMutation = useMutation({
-    mutationFn: ({ asset, shouldFail }: UploadReceiptParams) =>
-      uploadReceipt({ asset, shouldFail }),
+    mutationFn: (params: UploadReceiptParams) => uploadReceipt(params),
     onSuccess: () => {
       setSimulateFailure(false);
       queryClient.invalidateQueries({ queryKey: receiptQueryKeys.all });
@@ -81,45 +109,63 @@ function ReceiptUploadScreen() {
       ? uploadMutation.data.message
       : uploadMutation.isError
         ? getUploadErrorMessage(uploadMutation.error)
-        : pickerMessage;
+        : selectedAsset && ocrText
+          ? `Ready to upload ${selectedAsset.fileName || 'the captured receipt'}.`
+          : 'Capture a receipt using the camera to start the upload flow.';
 
-  const handlePickReceipt = async () => {
-    const result = await launchImageLibrary(imagePickerOptions);
+  const handleCaptureReceipt = async () => {
+    setCaptureFailure(null);
+    uploadMutation.reset();
+    setOcrText('');
+
+    const result = useLibraryPicker
+      ? await launchImageLibrary(imageLibraryOptions)
+      : await launchCamera(cameraOptions);
 
     if (result.didCancel) {
-      setPickerMessage(
-        selectedAsset
-          ? 'Selection was cancelled. Keeping the current receipt preview.'
-          : defaultPickerMessage,
-      );
       return;
     }
 
     if (result.errorCode || !result.assets?.[0]?.uri) {
-      setPickerMessage(
-        result.errorMessage ||
-          'Unable to access the selected receipt. Please choose a different image.',
-      );
+      setCaptureFailure('cancelled');
       return;
     }
 
     const nextAsset = result.assets[0];
-
     setSelectedAsset(nextAsset);
-    uploadMutation.reset();
-    setPickerMessage(
-      `Ready to upload ${nextAsset.fileName || 'the selected receipt'}.`,
-    );
+
+    let recognition: OcrResult;
+    try {
+      recognition = await recognizeReceiptText(nextAsset.uri!);
+    } catch {
+      setCaptureFailure('ocr_failed');
+      return;
+    }
+
+    if (recognition.isEmpty) {
+      setCaptureFailure('ocr_failed');
+      return;
+    }
+
+    if (!looksLikeReceipt(recognition.text)) {
+      setCaptureFailure('wrong_type');
+      return;
+    }
+
+    setOcrText(recognition.text);
   };
 
-  const submitUpload = (shouldFail: boolean) => {
-    if (!selectedAsset || isUploading) {
+  const handleUpload = (shouldFailOverride?: boolean) => {
+    if (!selectedAsset || !ocrText || isUploading) {
       return;
     }
 
     uploadMutation.mutate({
       asset: selectedAsset,
-      shouldFail,
+      ocrText,
+      captureDate: new Date().toISOString(),
+      deviceLocale: NativeModules.I18nManager?.localeIdentifier ?? 'en-US',
+      shouldFail: shouldFailOverride ?? simulateFailure,
     });
   };
 
@@ -129,22 +175,37 @@ function ReceiptUploadScreen() {
       testID="screen-receipt-upload"
     >
       <ScreenHeader
-        description="Pick one receipt image, preview it locally, and push a mock multipart upload request through the Day 2 flow."
+        description="Capture a receipt with the camera, verify it with on-device OCR, then upload."
         title="Upload Receipt"
         titleTestID="screen-receipt-upload-title"
       />
 
       <SectionCard
-        description="The image comes from the system photo library via `react-native-image-picker`."
-        title="1. Pick a receipt"
+        description="The image is captured via the device camera and verified with on-device OCR before upload."
+        title="1. Capture a receipt"
       >
-        <View style={styles.buttonWrapper}>
-          <Button
-            disabled={isUploading}
-            onPress={handlePickReceipt}
-            testID="pick-receipt-button"
-            title="Choose From Library"
-          />
+        <View style={styles.buttonGroup}>
+          <View style={styles.buttonWrapper}>
+            <Button
+              disabled={isUploading}
+              onPress={handleCaptureReceipt}
+              testID="pick-receipt-button"
+              title="Capture Receipt"
+            />
+          </View>
+          {__DEV__ ? (
+            <View style={styles.buttonWrapper}>
+              <Button
+                title={`[DEV] Picker: ${useLibraryPicker ? 'Library' : 'Camera'}`}
+                onPress={async () => {
+                  const next = !useLibraryPicker;
+                  await setUseLibraryPicker(next);
+                  setUseLibraryPickerState(next);
+                }}
+                testID="dev-flag-toggle"
+              />
+            </View>
+          ) : null}
         </View>
       </SectionCard>
 
@@ -167,7 +228,7 @@ function ReceiptUploadScreen() {
         ) : (
           <View style={styles.emptyPreview} testID="receipt-preview-empty">
             <Text style={styles.emptyPreviewText}>
-              No receipt selected yet.
+              No receipt captured yet.
             </Text>
           </View>
         )}
@@ -180,7 +241,7 @@ function ReceiptUploadScreen() {
         <View style={styles.buttonGroup}>
           <View style={styles.buttonWrapper}>
             <Button
-              disabled={!selectedAsset || isUploading}
+              disabled={!selectedAsset || !ocrText || isUploading}
               onPress={() =>
                 setSimulateFailure(previousState => !previousState)
               }
@@ -190,8 +251,8 @@ function ReceiptUploadScreen() {
           </View>
           <View style={styles.buttonWrapper}>
             <Button
-              disabled={!selectedAsset || isUploading}
-              onPress={() => submitUpload(simulateFailure)}
+              disabled={!selectedAsset || !ocrText || isUploading}
+              onPress={() => handleUpload()}
               testID="upload-receipt-button"
               title={isUploading ? 'Uploading...' : 'Upload Receipt'}
             />
@@ -199,8 +260,8 @@ function ReceiptUploadScreen() {
           {uploadMutation.isError ? (
             <View style={styles.buttonWrapper}>
               <Button
-                disabled={!selectedAsset || isUploading}
-                onPress={() => submitUpload(false)}
+                disabled={!selectedAsset || !ocrText || isUploading}
+                onPress={() => handleUpload(false)}
                 testID="retry-upload-button"
                 title="Retry Upload"
               />
@@ -209,7 +270,34 @@ function ReceiptUploadScreen() {
         </View>
       </SectionCard>
 
+      {captureFailure === 'ocr_failed' ? (
+        <StateCard
+          variant="error"
+          title="Couldn't read the receipt"
+          message="We couldn't read the receipt. Try again in better lighting."
+          testID="receipt-capture-failure-ocr"
+        />
+      ) : null}
+      {captureFailure === 'wrong_type' ? (
+        <StateCard
+          variant="error"
+          title="Wrong receipt type"
+          message="Only grocery and supermarket receipts are accepted."
+          testID="receipt-capture-failure-wrong-type"
+        />
+      ) : null}
+      {captureFailure === 'cancelled' ? (
+        <StateCard
+          variant="error"
+          title="Camera unavailable"
+          message="Unable to access the camera. Check your permissions and try again."
+          testID="receipt-capture-failure-cancelled"
+        />
+      ) : null}
+
       <StateCard
+        message={displayMessage}
+        showsActivityIndicator={isUploading}
         testID="receipt-upload-status"
         title="Upload status"
         variant={
@@ -219,11 +307,7 @@ function ReceiptUploadScreen() {
               ? 'error'
               : 'info'
         }
-      >
-        <View testID="receipt-upload-status-message">
-          <Text style={styles.statusMessage}>{displayMessage}</Text>
-        </View>
-      </StateCard>
+      />
     </ScrollView>
   );
 }
@@ -268,10 +352,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     height: 220,
     width: '100%',
-  },
-  statusMessage: {
-    fontSize: 15,
-    lineHeight: 22,
   },
 });
 
