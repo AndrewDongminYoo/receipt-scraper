@@ -524,6 +524,105 @@ The goal right now is not mastery. It is regained execution speed.
 
 ---
 
+## JD Alignment
+
+The fixed `Day 0` through `Day 5` sprint above does not change. This section is an appendix that maps the current practice app to the JD so the remaining prep time before Monday, April 6, 2026 can be used intentionally.
+
+A short constraint matters here:
+
+- A weekend cannot create "3+ years of React Native experience."
+- It can refresh the exact behaviors that make that experience legible on day one: native debugging, TypeScript fluency, API integration, state discipline, third-party SDK caution, and cross-team communication.
+
+### Current Practice Assets Already In This Repository
+
+Treat these as hands-on rehearsal assets, not as reasons to expand scope before
+the core flow feels natural:
+
+- Native iOS practice surface already exists in `ios/Podfile`, `ios/receiptScraper/Info.plist`, the CocoaPods lock state, and the current permission copy.
+- Native Android practice surface already exists in `android/app/build.gradle`, `android/settings.gradle`, and `android/app/src/main/AndroidManifest.xml`.
+- Native plug-in rehearsal already exists through `@react-native-ml-kit/text-recognition` and `src/api/ocr.ts`.
+- Feature-flag rehearsal already exists through `src/utils/featureFlags.ts` and the `receipt_upload_use_library_picker` fallback semantics.
+- API and state rehearsal already exists through `src/api/receipts.ts`, `src/api/rewards.ts`, TanStack Query invalidation, and visible success, failure, retry, loading, and empty states.
+
+### 1. Native Ops
+
+This practice axis covers the JD areas around React Native iOS and Android
+development and deployment, native Android and iOS understanding, and native
+plug-in experience.
+
+Focus:
+
+- Read and explain where permissions, deployment targets, autolinking, and release-related settings live in `Podfile`, `Info.plist`, `AndroidManifest.xml`, and Gradle.
+- Trace the OCR path from screen code into `src/api/ocr.ts`, then into the linked native dependency, and rehearse how to recover from pod install, Gradle sync, or autolinking failures.
+- Rebuild comfort with build, clean, reinstall, and release-signing basics on both iOS and Android.
+
+### 2. API Collaboration
+
+This practice axis covers the JD areas around backend collaboration for API
+integration, TypeScript fluency, and state-management understanding.
+
+Focus:
+
+- Keep request and response contracts explicit for upload, receipt list, survey, and reward-result flows.
+- Rehearse error classification, retry behavior, idempotency expectations, and query invalidation without copying server state into local state.
+- Be able to explain where a real API client, authentication header, or backend contract change would land in the current repository.
+
+### 3. Growth SDK Readiness
+
+This practice axis covers the JD areas around in-app ad management, push
+notifications, user tracking, tracking-driven usability improvement, and
+third-party SDK experience.
+
+Focus:
+
+- Decide the future initialization points for push, analytics, attribution, remote config, and ad SDKs before integrating anything.
+- Write down lifecycle checkpoints: app launch, permission prompt timing, token refresh, screen-view events, ad load/show/fail callbacks, and privacy boundaries.
+- Use the current OCR package and feature-flag surface as rehearsal for how to evaluate third-party SDK risk before production adoption.
+
+### 4. Maintenance & CS
+
+This practice axis covers the JD areas around code maintenance, CS bug fixes,
+basic CS understanding, and mobile debugging across JS and native layers.
+
+Focus:
+
+- Rehearse a repeatable loop: reproduce, narrow the layer, capture JS and native logs, patch safely, and verify on both iOS and Android.
+- Review async flows, loading states, list stability, and failure handling as system behavior, not only as screen code.
+- Keep regression checks lightweight but real: one change, one verification, both platforms.
+
+### 5. Cross-team Communication
+
+This practice axis covers the JD areas around content planning participation,
+backend collaboration, marketing collaboration, and general communication
+outside pure implementation work.
+
+Focus:
+
+- Practice proposing event names, payload shapes, error-copy ownership, and fallback behavior in plain language.
+- Treat content, marketing, and backend requirements as contract inputs that must be written down before SDK or API work starts.
+- Practice stating what is ready now, what is deferred, and what evidence is still needed before making the next implementation call.
+
+### Before Day 1 At Team Limited
+
+#### P0: Must Be Comfortable By Sunday, April 5, 2026
+
+- `Native Ops` is non-negotiable because the likely day-one friction is in permissions, builds, native configuration, and native module break/fix work.
+- `API Collaboration` is also P0 because real feature work will depend on typed contracts, error mapping, and correct TanStack Query discipline.
+- `Maintenance & CS` is also P0 because fixing CS-grade bugs requires a stable reproduce-collect-verify loop across JS and native layers.
+- The planning surface of `Growth SDK Readiness` is also P0: know where push, analytics, and ad SDK initialization would live even if the real providers are still deferred.
+
+#### P1: Stretch If Time Remains Before Monday, April 6, 2026
+
+- Go deeper on `Growth SDK Readiness`, especially ad lifecycle handling, push token lifecycle, screen tracking shape, and privacy boundaries.
+- Rehearse release-signing and store-distribution basics once the native configuration surface feels familiar.
+
+#### P2: First-Week Reinforcement
+
+- Use `Cross-team Communication` as the first-week force multiplier after the technical surfaces above feel comfortable.
+- Turn content, marketing, and backend coordination notes into concrete event dictionaries, payload agreements, and rollout checklists.
+
+---
+
 ## Explicit Anti-Patterns
 
 These are banned for this sprint.
