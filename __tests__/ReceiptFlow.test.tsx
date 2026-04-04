@@ -40,7 +40,7 @@ jest.mock('react-native-document-scanner-plugin', () => ({
 
 jest.mock('../src/api/ocr', () => ({
   recognizeReceiptText: jest.fn().mockResolvedValue({
-    text: 'TOTAL $12.99 TAX $1.00 CASH',
+    text: '상품명 김밥\n수량 1\n금액 3,500원\n부가세 318원\n합계 3,500원\n카드 일시불',
     isEmpty: false,
   }),
   OcrError: class OcrError extends Error {},

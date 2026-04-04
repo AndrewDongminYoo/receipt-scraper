@@ -36,6 +36,7 @@ import {
   getUseLibraryPicker,
   setUseLibraryPicker,
 } from '../utils/featureFlags';
+import { looksLikeReceiptText } from '../features/receipts/receiptValidation';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
@@ -51,14 +52,6 @@ const imageLibraryOptions: ImageLibraryOptions = {
   quality: 0.8,
   selectionLimit: 1,
 };
-
-const PRICE_PATTERN = /\$\d+[.,]\d{2}|\d+[.,]\d{2}\s*(USD|GBP|EUR|KRW|JPY)?/i;
-const RECEIPT_KEYWORD_PATTERN =
-  /\b(total|subtotal|tax|gst|vat|receipt|invoice|cashier|transaction|qty|cash|card|visa|mastercard)\b/i;
-
-function looksLikeReceipt(text: string): boolean {
-  return PRICE_PATTERN.test(text) && RECEIPT_KEYWORD_PATTERN.test(text);
-}
 
 function formatFileSize(fileSize?: number) {
   if (!fileSize) {
@@ -237,7 +230,7 @@ function ReceiptUploadScreen() {
         return;
       }
 
-      if (!looksLikeReceipt(recognition.text)) {
+      if (!looksLikeReceiptText(recognition.text)) {
         setCaptureFailure('wrong_type');
         return;
       }

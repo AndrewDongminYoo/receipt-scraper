@@ -99,7 +99,8 @@ const successResponse: ReceiptUploadResponse = {
   receipt: mockReceipt,
 };
 
-const validReceiptOcrText = 'TOTAL $12.99 TAX $1.00 CASH';
+const validReceiptOcrText =
+  '상품명 김밥\n수량 1\n금액 3,500원\n부가세 318원\n합계 3,500원\n카드 일시불';
 
 let consoleErrorSpy: jest.SpyInstance;
 const originalPlatformOS = Platform.OS;
@@ -277,6 +278,24 @@ test('shows wrong_type card when OCR text does not match receipt patterns', asyn
   expect(
     await screen.findByTestId('receipt-capture-failure-wrong-type'),
   ).toBeTruthy();
+  expectNoActWarnings();
+});
+
+test('accepts Korean receipt OCR text with comma-separated won amounts', async () => {
+  const user = userEvent.setup();
+
+  mockedRecognizeReceiptText.mockResolvedValueOnce({
+    text: '상품명 김밥\n수량 1\n금액 3,500원\n부가세 318원\n합계 3,500원\n카드 일시불',
+    isEmpty: false,
+  });
+
+  renderWithQueryClient(<ReceiptUploadScreen />);
+
+  await user.press(screen.getByTestId('pick-receipt-button'));
+
+  expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
+  expect(screen.getByTestId('upload-receipt-button')).toBeEnabled();
+  expect(screen.queryByTestId('receipt-capture-failure-wrong-type')).toBeNull();
   expectNoActWarnings();
 });
 
