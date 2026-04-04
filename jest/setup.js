@@ -34,3 +34,13 @@ jest.mock('react-native-image-picker', () => ({
   launchCamera: jest.fn(),
   launchImageLibrary: jest.fn(),
 }));
+
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn().mockResolvedValue(null),
+  setItem: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@react-native-ml-kit/text-recognition', () => ({
+  __esModule: true,
+  default: { recognize: jest.fn() },
+}));
