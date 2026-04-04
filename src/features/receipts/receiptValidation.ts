@@ -28,7 +28,7 @@ const QUANTITY_TOKEN_PATTERN = /^\d+(?:\.\d+)?$/;
 const BARCODE_TOKEN_PATTERN = /^\d{8,14}$/;
 const PROMOTION_TOKEN_PATTERN = /^\d+\+\d+$/;
 const NON_ITEM_LINE_PATTERN =
-  /(고객센터|영수증|교환|환불|구매점|점포방문|점포|구매|고객|고객용|승인번호|카드번호|사업자등록번호|과세물품|부가세|합계|결제|일시물|일시불|할부|정부방침|담당|전화|tel|포인트|reg:|cnt:|객층|신용승인정보|비씨|체크|ibk|방문|선도유지|일부품목)/i;
+  /(고객센터|영수증|교환|환불|구매점|점포방문|점포|구매|고객|고객용|승인번호|카드번호|사업자등록번호|과세물품|부가세|합계|결제|일시물|일시불|할부|정부방침|담당|전화|tel|포인트|reg:|cnt:|객층|신용승인정보|비씨|체크|ibk|방문|선도유지|일부품목|wifi|wi-fi|ssid|비밀번호|통신사|약관동의|\.co\.kr|https?:\/\/|www\.)/i;
 const ITEM_SECTION_TERMINATOR_PATTERN =
   /(과세물품|부가세|신용승인정보|고객용|카드번호|카드회사|고객센터|객층|담당|reg:|cnt:|p:\d|비씨|체크|ibk)/i;
 
@@ -464,6 +464,7 @@ function isLikelyItemNameLine(line: string): boolean {
     !PAYMENT_METHOD_PATTERN.test(cleaned) &&
     !BUSINESS_NUMBER_PATTERN.test(cleaned) &&
     !PURCHASE_DATE_TIME_PATTERN.test(cleaned) &&
+    !/^[A-Za-z]:\d{3,4}-\d{3,4}/.test(cleaned) &&
     !isAddressLine(cleaned) &&
     !NON_ITEM_LINE_PATTERN.test(cleaned)
   );
@@ -709,8 +710,10 @@ export function extractReceiptMetadata(text: string): ReceiptExtractedMetadata {
   const lineItems: ReceiptLineItem[] = [];
   const consumedIndices = new Set<number>();
   const itemSectionStartIndex = lines.findIndex(isItemHeaderLine);
-  const parsingStartIndex =
-    itemSectionStartIndex >= 0 ? itemSectionStartIndex + 1 : 0;
+  const hasExplicitItemHeader = itemSectionStartIndex >= 0;
+  const parsingStartIndex = hasExplicitItemHeader
+    ? itemSectionStartIndex + 1
+    : 0;
 
   for (let index = parsingStartIndex; index < lines.length; index += 1) {
     if (consumedIndices.has(index)) {
@@ -739,7 +742,9 @@ export function extractReceiptMetadata(text: string): ReceiptExtractedMetadata {
       continue;
     }
 
-    const summaryAmountItem = parseSummaryAmountItemLine(lines, index);
+    const summaryAmountItem = hasExplicitItemHeader
+      ? parseSummaryAmountItemLine(lines, index)
+      : null;
 
     if (summaryAmountItem) {
       lineItems.push(summaryAmountItem.item);
@@ -749,7 +754,9 @@ export function extractReceiptMetadata(text: string): ReceiptExtractedMetadata {
       continue;
     }
 
-    const sparseItem = parseSparseItemLine(lines, index);
+    const sparseItem = hasExplicitItemHeader
+      ? parseSparseItemLine(lines, index)
+      : null;
 
     if (!sparseItem) {
       continue;

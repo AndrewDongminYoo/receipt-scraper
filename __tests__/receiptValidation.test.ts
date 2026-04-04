@@ -168,3 +168,20 @@ test('extracts sparse convenience line items even when barcode lines appear befo
     );
   }
 });
+
+test('rejects cafe OCR noise instead of turning support text into purchase items', () => {
+  const sampleOcrText = convenienceReceiptFixtures.cafeNoiseReceipt.ocrText;
+
+  const metadata = extractReceiptMetadata(sampleOcrText);
+
+  expect(looksLikeReceiptText(sampleOcrText)).toBe(false);
+  expect(metadata.itemCount).toBe(0);
+  expect(metadata.lineItems).toEqual([]);
+
+  for (const noiseItemName of convenienceReceiptFixtures.cafeNoiseReceipt
+    .expectedNoiseItemNames) {
+    expect(metadata.lineItems).not.toContainEqual(
+      expect.objectContaining({ name: noiseItemName }),
+    );
+  }
+});
