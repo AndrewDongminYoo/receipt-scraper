@@ -35,6 +35,21 @@ jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
 }));
 
+jest.mock('react-native-document-scanner-plugin', () => ({
+  __esModule: true,
+  ResponseType: {
+    Base64: 'base64',
+    ImageFilePath: 'imageFilePath',
+  },
+  ScanDocumentResponseStatus: {
+    Success: 'success',
+    Cancel: 'cancel',
+  },
+  default: {
+    scanDocument: jest.fn(),
+  },
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn().mockResolvedValue(null),
   setItem: jest.fn().mockResolvedValue(undefined),
