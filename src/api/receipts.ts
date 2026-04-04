@@ -14,6 +14,7 @@ import { wait } from '../utils/wait';
 const LIST_DELAY_MS = 450;
 const UPLOAD_DELAY_MS = 900;
 const mockReceipts: ReceiptItem[] = [];
+const uploadedFileNames = new Set<string>();
 
 export const receiptQueryKeys = {
   all: ['receipts'] as const,
@@ -22,6 +23,9 @@ export const receiptQueryKeys = {
 export interface UploadReceiptParams {
   asset: Asset;
   shouldFail?: boolean;
+  ocrText: string;
+  captureDate: string;
+  deviceLocale: string;
 }
 
 const uploadClient = axios.create({
@@ -55,6 +59,7 @@ async function mockUploadAdapter(
   const shouldFail = getHeaderValue(config, 'x-mock-failure') === 'true';
 
   if (shouldFail) {
+    // shouldFail check takes priority over duplicate detection
     const errorResponse: AxiosResponse<ApiErrorResponse, FormData> = {
       config,
       data: {
@@ -75,8 +80,29 @@ async function mockUploadAdapter(
     );
   }
 
+  const fileName = getHeaderValue(config, 'x-receipt-file-name') ?? '';
+  if (fileName && uploadedFileNames.has(fileName)) {
+    const dupResponse: AxiosResponse<ApiErrorResponse, FormData> = {
+      config,
+      data: { message: 'This receipt has already been submitted.' },
+      headers: {},
+      status: 409,
+      statusText: 'Conflict',
+    };
+    throw new AxiosError<ApiErrorResponse, FormData>(
+      dupResponse.data.message,
+      AxiosError.ERR_BAD_RESPONSE,
+      config,
+      undefined,
+      dupResponse,
+    );
+  }
+  if (fileName) {
+    uploadedFileNames.add(fileName);
+  }
+
   const receipt: ReceiptItem = {
-    fileName: getHeaderValue(config, 'x-receipt-file-name'),
+    fileName,
     fileSize:
       Number(getHeaderValue(config, 'x-receipt-size') || 0) || undefined,
     id: `receipt-${Date.now()}`,
@@ -113,6 +139,9 @@ export async function fetchReceipts(): Promise<ReceiptItem[]> {
 export async function uploadReceipt({
   asset,
   shouldFail = false,
+  ocrText,
+  captureDate,
+  deviceLocale,
 }: UploadReceiptParams): Promise<ReceiptUploadResponse> {
   if (!asset.uri) {
     throw new Error('The selected receipt is missing a file URI.');
@@ -125,7 +154,9 @@ export async function uploadReceipt({
     type: asset.type || 'image/jpeg',
     uri: asset.uri,
   } as never);
-  formData.append('capturedAt', new Date().toISOString());
+  formData.append('ocrText', ocrText);
+  formData.append('captureDate', captureDate);
+  formData.append('deviceLocale', deviceLocale);
 
   const response = await uploadClient.post<ReceiptUploadResponse>(
     '/receipts/upload',
@@ -133,6 +164,8 @@ export async function uploadReceipt({
     {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'x-capture-date': captureDate,
+        'x-device-locale': deviceLocale,
         'x-mock-failure': shouldFail ? 'true' : 'false',
         'x-receipt-file-name': asset.fileName || 'receipt.jpg',
         'x-receipt-size': asset.fileSize ? String(asset.fileSize) : '',
