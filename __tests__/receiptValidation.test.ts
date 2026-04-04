@@ -194,3 +194,71 @@ test('extracts line items from the exact emart OCR sample with split quantity an
     unitPrice: '4,900',
   });
 });
+
+test('extracts stable receipt identity fields and a fingerprint from grocery receipts', () => {
+  const sampleOcrText = [
+    '이마트 역삼점 T:(02) 6908-1234',
+    '206-86-50913 한채양',
+    '서울특별시 강남구 역삼로 310',
+    '영수증 지참시 교환/환불 불가',
+    '[구 매]2026-03-14 15:19 POS:7911-5689',
+    '상품 명',
+    '01 도스코파스까버네쇼비',
+    '8809642308251 4,900 6 29,400',
+    '합 계',
+    '41,360',
+    '카드결제(IC)',
+  ].join('\n');
+  const spacedSampleOcrText = [
+    '이마트  역삼점  T:(02) 6908-1234',
+    '206-86-50913 한채양',
+    '서울특별시  강남구  역삼로 310',
+    '영수증 지참시 교환/환불 불가',
+    '[구 매] 2026-03-14 15:19 POS:7911-5689',
+    '상품 명',
+    '01 도스코파스까버네쇼비',
+    '8809642308251 4,900 6 29,400',
+    '합 계',
+    '41,360',
+    '카드결제(IC)',
+  ].join('\n');
+
+  const metadata = extractReceiptMetadata(sampleOcrText);
+  const spacedMetadata = extractReceiptMetadata(spacedSampleOcrText);
+
+  expect(metadata.businessNumber).toBe('206-86-50913');
+  expect(metadata.storeAddress).toBe('서울특별시 강남구 역삼로 310');
+  expect(metadata.purchaseDateTime).toBe('2026-03-14T15:19:00');
+  expect(metadata.receiptFingerprint).toBeDefined();
+  expect(metadata.receiptFingerprint).toBe(spacedMetadata.receiptFingerprint);
+  expect(metadata.isRefund).toBe(false);
+});
+
+test('marks refund receipts while ignoring normal return-policy text', () => {
+  const purchaseReceiptText = [
+    '팀리미티드 편의점',
+    '서울특별시 강남구 역삼로 310',
+    '206-86-50913',
+    '영수증 지참시 교환/환불 불가',
+    '교환/환불 구매점에서 가능(결제카드 지참)',
+    '[구 매]2026-03-14 15:19 POS:7911-5689',
+    '상품명 단가 수량 금액',
+    '김밥 3,500 1 3,500',
+    '합계 3,500원',
+    '카드 일시불',
+  ].join('\n');
+  const refundReceiptText = [
+    '팀리미티드 편의점',
+    '서울특별시 강남구 역삼로 310',
+    '206-86-50913',
+    '[환불]2026-03-15 12:20 POS:7911-5690',
+    '상품명 단가 수량 금액',
+    '김밥 3,500 1 3,500',
+    '카드취소',
+    '환불금액 3,500원',
+    '승인취소',
+  ].join('\n');
+
+  expect(extractReceiptMetadata(purchaseReceiptText).isRefund).toBe(false);
+  expect(extractReceiptMetadata(refundReceiptText).isRefund).toBe(true);
+});

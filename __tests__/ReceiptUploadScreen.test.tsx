@@ -12,8 +12,9 @@ import {
   type ImagePickerResponse,
 } from 'react-native-image-picker';
 import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
-import { uploadReceipt } from '../src/api/receipts';
+import { fetchReceipts, uploadReceipt } from '../src/api/receipts';
 import { recognizeReceiptText } from '../src/api/ocr';
+import { extractReceiptMetadata } from '../src/features/receipts/receiptValidation';
 import { getUseLibraryPicker } from '../src/utils/featureFlags';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 import type { ReceiptItem, ReceiptUploadResponse } from '../src/types/receipt';
@@ -39,6 +40,7 @@ jest.mock('react-native-document-scanner-plugin', () => ({
 }));
 
 jest.mock('../src/api/receipts', () => ({
+  fetchReceipts: jest.fn(),
   receiptQueryKeys: {
     all: ['receipts'],
   },
@@ -64,6 +66,9 @@ const mockedLaunchImageLibrary = launchImageLibrary as jest.MockedFunction<
 const mockedScanDocument = DocumentScanner.scanDocument as jest.MockedFunction<
   typeof DocumentScanner.scanDocument
 >;
+const mockedFetchReceipts = fetchReceipts as jest.MockedFunction<
+  typeof fetchReceipts
+>;
 const mockedUploadReceipt = uploadReceipt as jest.MockedFunction<
   typeof uploadReceipt
 >;
@@ -82,25 +87,11 @@ const mockAsset: Asset = {
   uri: 'file:///tmp/receipt-001.jpg',
 };
 
-const mockReceipt: ReceiptItem = {
-  fileName: mockAsset.fileName,
-  fileSize: mockAsset.fileSize,
-  id: 'receipt-1',
-  imageUrl: mockAsset.uri!,
-  mimeType: mockAsset.type,
-  purchasedAt: '2025-01-01T00:00:00.000Z',
-  status: 'pending',
-  storeName: 'Pending Review',
-};
-
-const successResponse: ReceiptUploadResponse = {
-  message:
-    'Receipt uploaded successfully. It is now queued for review in the mock backend.',
-  receipt: mockReceipt,
-};
-
 const validReceiptOcrText = [
   '팀리미티드 편의점',
+  '서울특별시 강남구 역삼로 310',
+  '206-86-50913',
+  '[구 매]2026-03-14 15:19 POS:7911-5689',
   '상품명 단가 수량 금액',
   '김밥 3,500 1 3,500',
   '삼각김밥 1,200 2 2,400',
@@ -108,6 +99,27 @@ const validReceiptOcrText = [
   '합계 5,900원',
   '카드 일시불',
 ].join('\n');
+
+const validReceiptExtractedMetadata =
+  extractReceiptMetadata(validReceiptOcrText);
+
+const mockReceipt: ReceiptItem = {
+  extractedMetadata: validReceiptExtractedMetadata,
+  fileName: mockAsset.fileName,
+  fileSize: mockAsset.fileSize,
+  id: 'receipt-1',
+  imageUrl: mockAsset.uri!,
+  mimeType: mockAsset.type,
+  purchasedAt: '2025-01-01T00:00:00.000Z',
+  status: 'pending',
+  storeName: validReceiptExtractedMetadata.storeName || 'Pending Review',
+};
+
+const successResponse: ReceiptUploadResponse = {
+  message:
+    'Receipt uploaded successfully. It is now queued for review in the mock backend.',
+  receipt: mockReceipt,
+};
 
 let consoleErrorSpy: jest.SpyInstance;
 let consoleWarnSpy: jest.SpyInstance;
@@ -140,6 +152,7 @@ beforeEach(() => {
     name: 'ReceiptUpload',
     params: undefined,
   } as never);
+  mockedFetchReceipts.mockResolvedValue([]);
   mockedGetUseLibraryPicker.mockResolvedValue(false);
   mockedLaunchCamera.mockResolvedValue({
     assets: [mockAsset],
@@ -298,6 +311,37 @@ test('shows wrong_type card when OCR text does not match receipt patterns', asyn
   expectNoActWarnings();
 });
 
+test('shows refund card when OCR text is a refund receipt', async () => {
+  const user = userEvent.setup();
+  const refundReceiptText = [
+    '팀리미티드 편의점',
+    '서울특별시 강남구 역삼로 310',
+    '206-86-50913',
+    '[환불]2026-03-15 12:20 POS:7911-5690',
+    '상품명 단가 수량 금액',
+    '김밥 3,500 1 3,500',
+    '카드취소',
+    '환불금액 3,500원',
+    '승인취소',
+  ].join('\n');
+
+  mockedRecognizeReceiptText.mockResolvedValueOnce({
+    text: refundReceiptText,
+    isEmpty: false,
+  });
+
+  renderWithQueryClient(<ReceiptUploadScreen />);
+
+  await user.press(screen.getByTestId('pick-receipt-button'));
+
+  expect(
+    await screen.findByTestId('receipt-capture-failure-refund'),
+  ).toBeTruthy();
+  expect(screen.getByTestId('upload-receipt-button')).toBeDisabled();
+  expect(mockedUploadReceipt).not.toHaveBeenCalled();
+  expectNoActWarnings();
+});
+
 test('accepts Korean receipt OCR text with comma-separated won amounts', async () => {
   const user = userEvent.setup();
 
@@ -452,25 +496,19 @@ test('falls back to launchCamera when ios document scanner throws', async () => 
   expectNoActWarnings();
 });
 
-test('shows duplicate error when the same receipt is uploaded twice', async () => {
+test('blocks duplicate receipt in the client before upload when the fingerprint already exists', async () => {
   const user = userEvent.setup();
-  const duplicateError = new Error('This receipt has already been submitted.');
 
-  mockedUploadReceipt
-    .mockResolvedValueOnce(successResponse)
-    .mockRejectedValueOnce(duplicateError);
+  mockedFetchReceipts.mockResolvedValueOnce([successResponse.receipt]);
 
   renderWithQueryClient(<ReceiptUploadScreen />);
 
   await user.press(screen.getByTestId('pick-receipt-button'));
-  await user.press(screen.getByTestId('upload-receipt-button'));
-  await screen.findByText(successResponse.message);
-
-  await user.press(screen.getByTestId('pick-receipt-button'));
-  await user.press(screen.getByTestId('upload-receipt-button'));
 
   expect(
-    await screen.findByText('This receipt has already been submitted.'),
+    await screen.findByTestId('receipt-capture-failure-duplicate'),
   ).toBeTruthy();
+  expect(screen.getByTestId('upload-receipt-button')).toBeDisabled();
+  expect(mockedUploadReceipt).not.toHaveBeenCalled();
   expectNoActWarnings();
 });

@@ -23,6 +23,7 @@ import {
   View,
 } from 'react-native';
 import {
+  fetchReceipts,
   receiptQueryKeys,
   uploadReceipt,
   type UploadReceiptParams,
@@ -32,6 +33,7 @@ import type {
   ReceiptUploadLaunchMode,
   RootStackParamList,
 } from '../navigation/RootNavigator';
+import type { ReceiptItem } from '../types/receipt';
 import {
   getUseLibraryPicker,
   setUseLibraryPicker,
@@ -84,7 +86,12 @@ function getUploadErrorMessage(error: unknown) {
   return 'Receipt upload failed. Please try again.';
 }
 
-type CaptureFailureKind = 'cancelled' | 'ocr_failed' | 'wrong_type';
+type CaptureFailureKind =
+  | 'cancelled'
+  | 'duplicate'
+  | 'ocr_failed'
+  | 'refund'
+  | 'wrong_type';
 
 function createAssetFromUri(uri: string): Asset {
   const fileName =
@@ -119,8 +126,16 @@ function ReceiptUploadScreen() {
 
   const uploadMutation = useMutation({
     mutationFn: (params: UploadReceiptParams) => uploadReceipt(params),
-    onSuccess: () => {
+    onSuccess: response => {
       setSimulateFailure(false);
+      queryClient.setQueryData<ReceiptItem[]>(receiptQueryKeys.all, current => {
+        const nextReceipts = current ?? [];
+
+        return [
+          response.receipt,
+          ...nextReceipts.filter(receipt => receipt.id !== response.receipt.id),
+        ];
+      });
       queryClient.invalidateQueries({ queryKey: receiptQueryKeys.all });
     },
   });
@@ -233,11 +248,26 @@ function ReceiptUploadScreen() {
         return;
       }
 
+      const extractedMetadata = extractReceiptMetadata(recognition.text);
+
+      if (extractedMetadata.isRefund) {
+        console.warn(
+          '[ReceiptUploadScreen] Blocked refund receipt before upload',
+          {
+            extractedMetadata,
+            fileName: nextAsset.fileName,
+            ocrText: recognition.text,
+          },
+        );
+        setCaptureFailure('refund');
+        return;
+      }
+
       if (!looksLikeReceiptText(recognition.text)) {
         console.warn(
           '[ReceiptUploadScreen] Rejected OCR text as non-itemized receipt',
           {
-            extractedMetadata: extractReceiptMetadata(recognition.text),
+            extractedMetadata,
             fileName: nextAsset.fileName,
             ocrText: recognition.text,
           },
@@ -246,9 +276,43 @@ function ReceiptUploadScreen() {
         return;
       }
 
+      let existingReceipts =
+        queryClient.getQueryData<ReceiptItem[]>(receiptQueryKeys.all) ?? [];
+
+      if (existingReceipts.length === 0) {
+        try {
+          existingReceipts = await queryClient.fetchQuery({
+            queryFn: fetchReceipts,
+            queryKey: receiptQueryKeys.all,
+          });
+        } catch {
+          existingReceipts = [];
+        }
+      }
+
+      if (
+        extractedMetadata.receiptFingerprint &&
+        existingReceipts.some(
+          receipt =>
+            receipt.extractedMetadata?.receiptFingerprint ===
+            extractedMetadata.receiptFingerprint,
+        )
+      ) {
+        console.warn(
+          '[ReceiptUploadScreen] Blocked duplicate receipt before upload',
+          {
+            extractedMetadata,
+            fileName: nextAsset.fileName,
+            receiptFingerprint: extractedMetadata.receiptFingerprint,
+          },
+        );
+        setCaptureFailure('duplicate');
+        return;
+      }
+
       setOcrText(recognition.text);
     },
-    [captureWithDocumentScanner, uploadMutation, useLibraryPicker],
+    [captureWithDocumentScanner, queryClient, uploadMutation, useLibraryPicker],
   );
 
   const didAutoStartRef = React.useRef(false);
@@ -393,6 +457,22 @@ function ReceiptUploadScreen() {
           title="Wrong receipt type"
           message="Only grocery and supermarket receipts are accepted."
           testID="receipt-capture-failure-wrong-type"
+        />
+      ) : null}
+      {captureFailure === 'refund' ? (
+        <StateCard
+          variant="error"
+          title="Refund receipt not accepted"
+          message="Refund and cancellation receipts are not eligible for points."
+          testID="receipt-capture-failure-refund"
+        />
+      ) : null}
+      {captureFailure === 'duplicate' ? (
+        <StateCard
+          variant="error"
+          title="Duplicate receipt"
+          message="This receipt has already been submitted."
+          testID="receipt-capture-failure-duplicate"
         />
       ) : null}
       {captureFailure === 'cancelled' ? (

@@ -16,6 +16,15 @@ const SUMMARY_LINE_PATTERN =
 const STORE_LABEL_PATTERN = /(매장명|상호|점포명|지점|store|mart)/i;
 const PAYMENT_METHOD_PATTERN =
   /(카드|현금|간편결제|pay|cash|card|visa|mastercard|일시불|할부)/i;
+const BUSINESS_NUMBER_PATTERN = /\b\d{3}-\d{2}-\d{5}\b/;
+const PURCHASE_DATE_TIME_PATTERN =
+  /(\d{4}[./-]\d{2}[./-]\d{2})(?:\s*\([^)]+\))?(?:\s+)(\d{2}:\d{2}(?::\d{2})?)/;
+const ADDRESS_LINE_PATTERN =
+  /(?:특별시|광역시|자치시|도|시|군|구).*(?:로|길|동|읍|면|리)/;
+const REFUND_RECEIPT_PATTERN =
+  /(환불영수증|환불금액|환불합계|환불|반품|거래취소|승인취소|카드취소|결제취소|취소영수증|refund|cancel)/i;
+const REFUND_EXCLUSION_PATTERN =
+  /(교환환불불가|교환환불.*가능|영수증지참시교환환불불가|정상상품에한함.*환불|교환환불구매점에서가능)/i;
 const QUANTITY_TOKEN_PATTERN = /^\d+(?:\.\d+)?$/;
 const BARCODE_TOKEN_PATTERN = /^\d{8,14}$/;
 const PROMOTION_TOKEN_PATTERN = /^\d+\+\d+$/;
@@ -29,6 +38,10 @@ function splitReceiptLines(text: string): string[] {
 
 function collapseReceiptText(text: string): string {
   return text.replace(/\s+/g, '').toLowerCase();
+}
+
+function compactReceiptText(text: string): string {
+  return text.replace(/[^0-9a-zA-Z가-힣]+/g, '').toLowerCase();
 }
 
 function matchAmountToken(line: string): string | undefined {
@@ -91,6 +104,38 @@ function formatAmountNumber(value: number): string {
   }).format(value);
 }
 
+function normalizeFingerprintText(value?: string): string | undefined {
+  const normalized = value?.replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase();
+
+  return normalized || undefined;
+}
+
+function normalizeAmountValue(value?: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = parseAmountNumber(value);
+
+  return parsed === null ? undefined : String(parsed);
+}
+
+function normalizeDateTimeValue(value?: string): string | undefined {
+  const normalized = value?.replace(/[^\d]/g, '');
+
+  return normalized || undefined;
+}
+
+function hashReceiptSeed(seed: string): string {
+  let hash = 17;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (Math.imul(hash, 31) + seed.charCodeAt(index)) % 2147483647;
+  }
+
+  return `receipt_${hash.toString(16).padStart(8, '0')}`;
+}
+
 function inferAmount(unitPrice: string, quantity: string): string | undefined {
   const parsedUnitPrice = parseAmountNumber(unitPrice);
   const parsedQuantity = Number(quantity);
@@ -100,6 +145,109 @@ function inferAmount(unitPrice: string, quantity: string): string | undefined {
   }
 
   return formatAmountNumber(parsedUnitPrice * parsedQuantity);
+}
+
+function extractBusinessNumber(lines: string[]): string | undefined {
+  for (const line of lines) {
+    const matchedBusinessNumber = line.match(BUSINESS_NUMBER_PATTERN)?.[0];
+
+    if (matchedBusinessNumber) {
+      return matchedBusinessNumber;
+    }
+  }
+
+  return undefined;
+}
+
+function extractPurchaseDateTime(lines: string[]): string | undefined {
+  for (const line of lines) {
+    const matchedDateTime = line.match(PURCHASE_DATE_TIME_PATTERN);
+
+    if (!matchedDateTime) {
+      continue;
+    }
+
+    const normalizedDate = matchedDateTime[1].replace(/[./]/g, '-');
+    const normalizedTime =
+      matchedDateTime[2].length === 5
+        ? `${matchedDateTime[2]}:00`
+        : matchedDateTime[2];
+
+    return `${normalizedDate}T${normalizedTime}`;
+  }
+
+  return undefined;
+}
+
+function isAddressLine(line: string): boolean {
+  return (
+    ADDRESS_LINE_PATTERN.test(line) &&
+    !isItemHeaderLine(line) &&
+    !isSummaryLine(line) &&
+    !BUSINESS_NUMBER_PATTERN.test(line) &&
+    !/\bPOS\b/i.test(line)
+  );
+}
+
+function extractStoreAddress(lines: string[]): string | undefined {
+  return lines.find(isAddressLine);
+}
+
+function isRefundReceiptLine(line: string): boolean {
+  const collapsed = compactReceiptText(line);
+
+  if (REFUND_EXCLUSION_PATTERN.test(collapsed)) {
+    return false;
+  }
+
+  return REFUND_RECEIPT_PATTERN.test(collapsed);
+}
+
+function buildReceiptFingerprint(
+  metadata: ReceiptExtractedMetadata,
+  originalText: string,
+): string | undefined {
+  const lineItemSignature = metadata.lineItems
+    .map(lineItem =>
+      [
+        normalizeAmountValue(lineItem.unitPrice),
+        lineItem.quantity?.trim(),
+        normalizeAmountValue(lineItem.amount),
+      ]
+        .filter(Boolean)
+        .join(':'),
+    )
+    .filter(Boolean)
+    .join('|');
+  const hasStructuredIdentity = Boolean(
+    normalizeDateTimeValue(metadata.purchaseDateTime) &&
+    normalizeAmountValue(metadata.totalAmount) &&
+    (normalizeFingerprintText(metadata.businessNumber) ||
+      normalizeFingerprintText(metadata.storeAddress) ||
+      normalizeFingerprintText(metadata.storeName)),
+  );
+
+  if (hasStructuredIdentity) {
+    return hashReceiptSeed(
+      [
+        normalizeFingerprintText(metadata.storeName),
+        normalizeFingerprintText(metadata.storeAddress),
+        normalizeFingerprintText(metadata.businessNumber),
+        normalizeDateTimeValue(metadata.purchaseDateTime),
+        normalizeAmountValue(metadata.totalAmount),
+        normalizeAmountValue(metadata.vatAmount),
+        normalizeFingerprintText(metadata.paymentMethod),
+        String(metadata.itemCount),
+        lineItemSignature,
+      ]
+        .filter(Boolean)
+        .join('::'),
+    );
+  }
+
+  const collapsedText = collapseReceiptText(originalText);
+
+  return collapsedText ? hashReceiptSeed(collapsedText) : undefined;
 }
 
 function parseItemDetailTokens(
@@ -351,15 +499,22 @@ export function extractReceiptMetadata(text: string): ReceiptExtractedMetadata {
       /(일시불|할부|결제금액|합계|총액|총금액|total)/i,
     ) || matchAmountToken(paymentLine || '');
   const vatAmount = findAmountNearKeyword(lines, /(부가세|vat|tax)/i);
-
-  return {
+  const metadata: ReceiptExtractedMetadata = {
+    businessNumber: extractBusinessNumber(lines),
     itemCount: lineItems.length,
+    isRefund: lines.some(isRefundReceiptLine),
     lineItems,
     paymentMethod: paymentLine?.match(PAYMENT_METHOD_PATTERN)?.[0],
+    purchaseDateTime: extractPurchaseDateTime(lines),
+    storeAddress: extractStoreAddress(lines),
     storeName: STORE_LABEL_PATTERN.test(normalized) ? storeLine : storeLine,
     totalAmount,
     vatAmount,
   };
+
+  metadata.receiptFingerprint = buildReceiptFingerprint(metadata, text);
+
+  return metadata;
 }
 
 export function looksLikeReceiptText(text: string): boolean {

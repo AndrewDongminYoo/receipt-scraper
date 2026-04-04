@@ -8,9 +8,14 @@ export interface ReceiptLineItem {
 }
 
 export interface ReceiptExtractedMetadata {
+  businessNumber?: string;
   itemCount: number;
+  isRefund?: boolean;
   lineItems: ReceiptLineItem[];
   paymentMethod?: string;
+  purchaseDateTime?: string;
+  receiptFingerprint?: string;
+  storeAddress?: string;
   storeName?: string;
   totalAmount?: string;
   vatAmount?: string;

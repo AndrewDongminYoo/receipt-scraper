@@ -15,7 +15,6 @@ import { wait } from '../utils/wait';
 const LIST_DELAY_MS = 450;
 const UPLOAD_DELAY_MS = 900;
 const mockReceipts: ReceiptItem[] = [];
-const uploadedFileNames = new Set<string>();
 
 export const receiptQueryKeys = {
   all: ['receipts'] as const,
@@ -94,7 +93,43 @@ async function mockUploadAdapter(
   }
 
   const fileName = getHeaderValue(config, 'x-receipt-file-name') ?? '';
-  if (fileName && uploadedFileNames.has(fileName)) {
+  const ocrText = decodeHeaderValue(
+    getHeaderValue(config, 'x-receipt-ocr-text'),
+  );
+  const extractedMetadata = ocrText
+    ? extractReceiptMetadata(ocrText)
+    : undefined;
+  const receiptFingerprint = extractedMetadata?.receiptFingerprint;
+  const captureDate =
+    decodeHeaderValue(getHeaderValue(config, 'x-capture-date')) ||
+    new Date().toISOString();
+
+  if (extractedMetadata?.isRefund) {
+    const refundResponse: AxiosResponse<ApiErrorResponse, FormData> = {
+      config,
+      data: {
+        message: 'Refund or cancellation receipts are not accepted for upload.',
+      },
+      headers: {},
+      status: 422,
+      statusText: 'Unprocessable Entity',
+    };
+    throw new AxiosError<ApiErrorResponse, FormData>(
+      refundResponse.data.message,
+      AxiosError.ERR_BAD_RESPONSE,
+      config,
+      undefined,
+      refundResponse,
+    );
+  }
+
+  if (
+    receiptFingerprint &&
+    mockReceipts.some(
+      receipt =>
+        receipt.extractedMetadata?.receiptFingerprint === receiptFingerprint,
+    )
+  ) {
     const dupResponse: AxiosResponse<ApiErrorResponse, FormData> = {
       config,
       data: { message: 'This receipt has already been submitted.' },
@@ -110,16 +145,6 @@ async function mockUploadAdapter(
       dupResponse,
     );
   }
-  if (fileName) {
-    uploadedFileNames.add(fileName);
-  }
-
-  const ocrText = decodeHeaderValue(
-    getHeaderValue(config, 'x-receipt-ocr-text'),
-  );
-  const extractedMetadata = ocrText
-    ? extractReceiptMetadata(ocrText)
-    : undefined;
 
   const receipt: ReceiptItem = {
     extractedMetadata,
@@ -130,7 +155,7 @@ async function mockUploadAdapter(
     imageUrl: getHeaderValue(config, 'x-receipt-uri') || '',
     mimeType: getHeaderValue(config, 'x-receipt-type'),
     ocrText,
-    purchasedAt: new Date().toISOString(),
+    purchasedAt: captureDate,
     status: 'pending',
     storeName: extractedMetadata?.storeName || 'Pending Review',
   };
