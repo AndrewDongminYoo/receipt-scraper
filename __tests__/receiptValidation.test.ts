@@ -4,6 +4,7 @@ import {
   normalizeReceiptText,
 } from '../src/features/receipts/receiptValidation';
 
+// cspell:disable
 test('normalizes OCR whitespace before receipt checks', () => {
   expect(normalizeReceiptText('상품명  김밥\n\n합계   3,500원')).toBe(
     '상품명 김밥 합계 3,500원',
@@ -261,4 +262,258 @@ test('marks refund receipts while ignoring normal return-policy text', () => {
 
   expect(extractReceiptMetadata(purchaseReceiptText).isRefund).toBe(false);
   expect(extractReceiptMetadata(refundReceiptText).isRefund).toBe(true);
+});
+
+test('does not mark seven eleven receipt policy text as a refund receipt', () => {
+  const sampleOcrText = [
+    '7-ELEVEL.',
+    '세븐일레븐 삼성8호점#10612',
+    '(02-3443-4789)',
+    '김홍칠',
+    '서울특별시 강남구 봉은사로 63길',
+    '11 (삽성동)',
+    'AA.eie) Lt..',
+    '1208515430',
+    '[판 매] 2025-06-09 (월) 22:19:40',
+    '상품명 수량 금 액',
+    '농십)누들핏마라탄탄',
+    '8801043035330',
+    '합게',
+    '삼립)쪽닭쏙 닭블랙페퍼 100',
+    '8801068396669 2',
+    '1',
+    '과세물품가액',
+    '부 가 세',
+    '승인번호 72120938',
+    '1,800',
+    '-4,500',
+    '4.500',
+    '5,727',
+    '인 -4,500',
+    '4# 신용승인정보[고객용] +',
+    '점모 방문',
+    '573',
+    '6,300',
+    'TBK비씨제크[ IBK비씨제크] 6,300',
+    '52980380',
+    'P:01-01 CNT:0003 REG: 백경도',
+    '(N)일시물',
+    '세븐일레 고객센터 1577-0711',
+    '71061201251601786221',
+    '교 환환불은 영수증 및 걸제카드',
+    '삼품 등 일부품목 제외',
+    '치참하시어 30일 이내 구매',
+    '4시도유시필요상품 및 시즌',
+    ', 기획',
+  ].join('\n');
+
+  expect(extractReceiptMetadata(sampleOcrText).isRefund).toBe(false);
+});
+
+test('does not mark CU exchange policy text as a refund receipt', () => {
+  const sampleOcrText = [
+    'CU(Again)',
+    '최 증발행인쇄',
+    'CU 강남CC점',
+    '사업자등록번호: 120123828/',
+    '서울특별시 강남구 봉은사로439C빌',
+    '딩(삼성동) CC빌딩',
+    '박완식 TEL : 070-7604-3123',
+    '정부 방침 으로 교환/환불 시 영수증',
+    '지참하셔야 합니다. (결제 1카드 지함)',
+    '30일 내 구매 점포 방문',
+    '#식품선도유지상품 및 일부품목제외',
+    '51006 2025-06-25(수) POS-01',
+    '도)넘버원양념쌀치킨2',
+    '총구 매 액',
+    '과세물품가액',
+    '부 가 세',
+    '#걸 제 금액',
+    '신용카 드',
+    '결제금액 :',
+    '1',
+    '카드회사: 001',
+    '할부개월 : 00',
+    '1',
+    '카드번호: 5298-0380-***후-191*',
+    '7,500',
+    '7, 500',
+    '6,819',
+    '681',
+    '7, 500',
+    '신용 카드 **유',
+    '7,500',
+    'IBK비씨',
+    '승인번호: 67687064',
+    '7, 500',
+    '9202506255100601609',
+    '#표시 상품은 부가세 먼세 품복 임.',
+    '객층:00 담당: 박*식',
+    'NO:5992 20:48',
+  ].join('\n');
+
+  expect(extractReceiptMetadata(sampleOcrText).isRefund).toBe(false);
+});
+
+test('extracts at least one line item from sparse seven eleven quantity-only OCR', () => {
+  const sampleOcrText = [
+    '7-ELEVEn',
+    '세븐일레븐 삼성8호점#10612',
+    '(02-3443-4789)',
+    '김홍칠',
+    '1208515430',
+    '서울특별시 강남구 봉은사로 63길',
+    '11 (삼성동)',
+    '[판 매] 2025-07-16 (수) 20:47:12',
+    '상품명 수랑',
+    '동원)양반영양닭죽285g',
+    '8801047161677 2',
+    '합계',
+    '과세물품기가액',
+    '부가 세',
+    '할',
+    '금액',
+    '-4,500',
+    '4,500',
+    '4,091',
+    '인 -4,500',
+    '#4,500',
+    '+* 신용승인정보[고객용] ***',
+    '409',
+    'IBK비씨체크[ IBK비씨체크] 4,500',
+    '52980380',
+    '승인번호 76126028 (N)일시물',
+    'P:01-01 CNT:0002 REG: 백경도',
+    '상품 등 일부품록 제외',
+    '세븐일레븐 고객선센티 1577-0711',
+    '71061201251975688767',
+    '교환/환볼은 영수증 및 결제카드',
+    '를 지참하시어 30일 이내 구매',
+    '점포 방문',
+    '선도 유지 요상품 및 시즌 기획',
+  ].join('\n');
+
+  const metadata = extractReceiptMetadata(sampleOcrText);
+
+  expect(metadata.isRefund).toBe(false);
+  expect(looksLikeReceiptText(sampleOcrText)).toBe(true);
+  expect(metadata.itemCount).toBeGreaterThan(0);
+  expect(metadata.lineItems).toContainEqual(
+    expect.objectContaining({
+      name: '동원)양반영양닭죽285g',
+      quantity: '2',
+    }),
+  );
+});
+
+test('extracts sparse convenience line item when quantity is isolated on the next line', () => {
+  const sampleOcrText = [
+    '7-ELEVEn.',
+    '세븐일레븐 삼성8호점#10612',
+    '(02-3443-4789)',
+    '김홍침',
+    'A .e님e Lu}.',
+    '서울특별시 강남구 봉은사로 63길',
+    '11 (삼성동)',
+    '1208515430',
+    '[판 매] 2025-05-28 (수) 20:26:01',
+    '상품명 수량',
+    '의계',
+    '하림)맛5가슴살오징어 100',
+    '8801492392480 3',
+    '52980380',
+    '과세물품가액',
+    '부 가 세',
+    '할',
+    '승인번호 16777143',
+    '금액',
+    '-4, 700',
+    '-4,700',
+    '+ 신용승인정보[고객용] +*',
+    '9,400',
+    '인 -4,700',
+    '9,400',
+    'IBK비씨체크[ IBK비씨체크] 9,400',
+    '8,545',
+    '855',
+    'P:01-01 CNT:0003 REG: 백경도',
+    '(N)일시볼',
+    '외',
+    '세븐일레븐 고객센터 1577-0711',
+    '71061201251483085438',
+    'il 완/환별은 영수증 및 결세가드',
+    '둘시참이시어 30일 이나 구매',
+    '심보 방문',
+    '선도유시밀요실물 및신즌기의',
+    '상품 통 일부목',
+  ].join('\n');
+
+  const metadata = extractReceiptMetadata(sampleOcrText);
+
+  expect(metadata.itemCount).toBeGreaterThan(0);
+  expect(metadata.lineItems).toContainEqual(
+    expect.objectContaining({
+      name: '하림)맛5가슴살오징어 100',
+      quantity: '3',
+    }),
+  );
+});
+
+test('extracts sparse convenience line items even when barcode lines appear before the name', () => {
+  const sampleOcrText = [
+    '7-ELEVEL.',
+    '세븐일레븐 삼성8호점#10612',
+    '(02-3443-4789)',
+    '김홍철',
+    '서울특별시 강남구 봉은사로 63길',
+    '11 (삼성동)',
+    '[판 매] 2025-06-16 (월) 20:02:35',
+    'Aheie) Luh..',
+    '상품명 수람 금 액',
+    '8809778498154',
+    '1208515430',
+    '이스타)도쿠시마라면큰컵',
+    '합계',
+    '2,200',
+    '삼립)쏙닭쪽 닭불랙폐퍼100 -4,500',
+    '8801068396669',
+    '2',
+    '52980380',
+    '1',
+    '과세물품가액',
+    '부가 세',
+    '할',
+    '승인번호 71550266',
+    '4,500',
+    '6,091',
+    '##후 신용승인정보[고객용] **',
+    'IBK비씨크IBK비씨체크] 6,700',
+    '점포 방부',
+    '609',
+    '인 -4,500',
+    '#6,700',
+    'P:01-01 CNT:0003 REG: 백경도',
+    '(N)일시물',
+    '세일레븐고객터 1577-0711',
+    '71061 12012516 674355133',
+    '교 1환/환복은 영수즘 및 결제카드',
+    '치참하시어 30일 이내 구매',
+    '선도 유지,요상품 및 시즌 기획',
+    '상품 등 일부품복 제외',
+  ].join('\n');
+
+  const metadata = extractReceiptMetadata(sampleOcrText);
+
+  expect(metadata.itemCount).toBeGreaterThan(0);
+  expect(metadata.lineItems).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        name: '이스타)도쿠시마라면큰컵',
+      }),
+      expect.objectContaining({
+        name: '삼립)쏙닭쪽 닭불랙폐퍼100',
+        quantity: '2',
+      }),
+    ]),
+  );
 });
