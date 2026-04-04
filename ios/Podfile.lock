@@ -21,6 +21,28 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - DocumentScanner (2.0.4):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - FBLazyVector (0.84.1)
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
@@ -2034,6 +2056,7 @@ PODS:
 
 DEPENDENCIES:
   - "AsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - DocumentScanner (from `../node_modules/react-native-document-scanner-plugin`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2135,6 +2158,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   AsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  DocumentScanner:
+    :path: "../node_modules/react-native-document-scanner-plugin"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   hermes-engine:
@@ -2293,6 +2318,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AsyncStorage: 2e1d431842588f5af845737e6435c1fcbecdab51
+  DocumentScanner: 8409e7cb95cfea9c445c36886c4adc9a927973aa
   FBLazyVector: e97c19a5a442429d1988f182a1940fb08df514da
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleMLKit: ddd51d7dff36ff28defa69afedd9cdce684fd857
