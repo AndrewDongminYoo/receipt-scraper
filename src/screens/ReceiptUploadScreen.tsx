@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import type {
@@ -27,6 +28,10 @@ import {
   type UploadReceiptParams,
 } from '../api/receipts';
 import { recognizeReceiptText, type OcrResult } from '../api/ocr';
+import type {
+  ReceiptUploadLaunchMode,
+  RootStackParamList,
+} from '../navigation/RootNavigator';
 import {
   getUseLibraryPicker,
   setUseLibraryPicker,
@@ -103,6 +108,7 @@ function createAssetFromUri(uri: string): Asset {
 }
 
 function ReceiptUploadScreen() {
+  const route = useRoute<RouteProp<RootStackParamList, 'ReceiptUpload'>>();
   const queryClient = useQueryClient();
   const [selectedAsset, setSelectedAsset] = React.useState<Asset | null>(null);
   const [simulateFailure, setSimulateFailure] = React.useState(false);
@@ -156,48 +162,19 @@ function ReceiptUploadScreen() {
       }
     }, []);
 
-  const handleCaptureReceipt = async () => {
-    setCaptureFailure(null);
-    uploadMutation.reset();
-    setOcrText('');
+  const handleCaptureReceipt = React.useCallback(
+    async (launchModeOverride?: ReceiptUploadLaunchMode) => {
+      setCaptureFailure(null);
+      uploadMutation.reset();
+      setOcrText('');
 
-    let nextAsset: Asset;
+      let nextAsset: Asset;
+      const shouldUseLibrary =
+        launchModeOverride === 'library' ||
+        (launchModeOverride === undefined && useLibraryPicker);
 
-    if (useLibraryPicker) {
-      const result = await launchImageLibrary(imageLibraryOptions);
-
-      if (result.didCancel) {
-        return;
-      }
-
-      if (result.errorCode || !result.assets?.[0]?.uri) {
-        setCaptureFailure('cancelled');
-        return;
-      }
-
-      nextAsset = result.assets[0];
-    } else {
-      if (Platform.OS === 'ios') {
-        const scannedAsset = await captureWithDocumentScanner();
-
-        if (scannedAsset) {
-          nextAsset = scannedAsset;
-        } else {
-          const fallbackResult = await launchCamera(cameraOptions);
-
-          if (fallbackResult.didCancel) {
-            return;
-          }
-
-          if (fallbackResult.errorCode || !fallbackResult.assets?.[0]?.uri) {
-            setCaptureFailure('cancelled');
-            return;
-          }
-
-          nextAsset = fallbackResult.assets[0];
-        }
-      } else {
-        const result = await launchCamera(cameraOptions);
+      if (shouldUseLibrary) {
+        const result = await launchImageLibrary(imageLibraryOptions);
 
         if (result.didCancel) {
           return;
@@ -209,31 +186,77 @@ function ReceiptUploadScreen() {
         }
 
         nextAsset = result.assets[0];
+      } else {
+        if (Platform.OS === 'ios') {
+          const scannedAsset = await captureWithDocumentScanner();
+
+          if (scannedAsset) {
+            nextAsset = scannedAsset;
+          } else {
+            const fallbackResult = await launchCamera(cameraOptions);
+
+            if (fallbackResult.didCancel) {
+              return;
+            }
+
+            if (fallbackResult.errorCode || !fallbackResult.assets?.[0]?.uri) {
+              setCaptureFailure('cancelled');
+              return;
+            }
+
+            nextAsset = fallbackResult.assets[0];
+          }
+        } else {
+          const result = await launchCamera(cameraOptions);
+
+          if (result.didCancel) {
+            return;
+          }
+
+          if (result.errorCode || !result.assets?.[0]?.uri) {
+            setCaptureFailure('cancelled');
+            return;
+          }
+
+          nextAsset = result.assets[0];
+        }
       }
-    }
 
-    setSelectedAsset(nextAsset);
+      setSelectedAsset(nextAsset);
 
-    let recognition: OcrResult;
-    try {
-      recognition = await recognizeReceiptText(nextAsset.uri!);
-    } catch {
-      setCaptureFailure('ocr_failed');
+      let recognition: OcrResult;
+      try {
+        recognition = await recognizeReceiptText(nextAsset.uri!);
+      } catch {
+        setCaptureFailure('ocr_failed');
+        return;
+      }
+
+      if (recognition.isEmpty) {
+        setCaptureFailure('ocr_failed');
+        return;
+      }
+
+      if (!looksLikeReceipt(recognition.text)) {
+        setCaptureFailure('wrong_type');
+        return;
+      }
+
+      setOcrText(recognition.text);
+    },
+    [captureWithDocumentScanner, uploadMutation, useLibraryPicker],
+  );
+
+  const didAutoStartRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!route.params?.autoStart || didAutoStartRef.current) {
       return;
     }
 
-    if (recognition.isEmpty) {
-      setCaptureFailure('ocr_failed');
-      return;
-    }
-
-    if (!looksLikeReceipt(recognition.text)) {
-      setCaptureFailure('wrong_type');
-      return;
-    }
-
-    setOcrText(recognition.text);
-  };
+    didAutoStartRef.current = true;
+    handleCaptureReceipt(route.params.launchMode).then(() => undefined);
+  }, [handleCaptureReceipt, route.params?.autoStart, route.params?.launchMode]);
 
   const handleUpload = (shouldFailOverride?: boolean) => {
     if (!selectedAsset || !ocrText || isUploading) {
@@ -268,7 +291,9 @@ function ReceiptUploadScreen() {
           <View style={styles.buttonWrapper}>
             <Button
               disabled={isUploading}
-              onPress={handleCaptureReceipt}
+              onPress={() => {
+                handleCaptureReceipt().then(() => undefined);
+              }}
               testID="pick-receipt-button"
               title="Capture Receipt"
             />

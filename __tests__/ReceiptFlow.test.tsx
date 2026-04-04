@@ -5,6 +5,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react-native';
+import { useRoute } from '@react-navigation/native';
 import DocumentScanner from 'react-native-document-scanner-plugin';
 import { Platform } from 'react-native';
 import {
@@ -16,6 +17,11 @@ import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
 import ReceiptListScreen from '../src/screens/ReceiptListScreen';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 import type { ReceiptItem } from '../src/types/receipt';
+
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: jest.fn(),
+}));
 
 jest.mock('react-native-document-scanner-plugin', () => ({
   __esModule: true,
@@ -51,6 +57,7 @@ const mockedLaunchCamera = launchCamera as jest.MockedFunction<
 const mockedScanDocument = DocumentScanner.scanDocument as jest.MockedFunction<
   typeof DocumentScanner.scanDocument
 >;
+const mockedUseRoute = useRoute as jest.MockedFunction<typeof useRoute>;
 
 const mockAsset: Asset = {
   fileName: 'receipt-001.jpg',
@@ -117,6 +124,11 @@ beforeEach(() => {
     assets: [mockAsset],
   } as ImagePickerResponse);
   mockedScanDocument.mockRejectedValue(new Error('scanner unavailable'));
+  mockedUseRoute.mockReturnValue({
+    key: 'ReceiptUpload-flow',
+    name: 'ReceiptUpload',
+    params: undefined,
+  } as never);
 });
 
 afterEach(() => {

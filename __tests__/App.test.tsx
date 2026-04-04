@@ -39,7 +39,6 @@ test('renders the Home screen with all primary navigation buttons', () => {
 });
 
 test.each([
-  ['Upload Receipt', 'screen-receipt-upload', 'screen-receipt-upload-title'],
   ['Receipt List', 'screen-receipt-list', 'screen-receipt-list-title'],
   ['Survey', 'screen-survey', 'screen-survey-title'],
   ['Reward Result', 'screen-reward-result', 'screen-reward-result-title'],
@@ -60,3 +59,19 @@ test.each([
     expect(screen.getByTestId(titleTestID)).toHaveTextContent(buttonTitle);
   },
 );
+
+test('opens the upload source sheet from Home before navigating', async () => {
+  const user = userEvent.setup();
+
+  renderWithQueryClient(
+    <NavigationContainer>
+      <RootStackComponent />
+    </NavigationContainer>,
+  );
+
+  await user.press(screen.getByText('Upload Receipt'));
+
+  expect(await screen.findByTestId('upload-source-sheet')).toBeTruthy();
+  expect(screen.getByTestId('upload-source-library')).toBeTruthy();
+  expect(screen.getByTestId('upload-source-camera')).toBeTruthy();
+});

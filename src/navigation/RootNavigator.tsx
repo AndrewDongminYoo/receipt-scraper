@@ -1,14 +1,26 @@
 import * as React from 'react';
-import {
-  createStaticNavigation,
-  type StaticParamList,
-} from '@react-navigation/native';
+import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import ReceiptListScreen from '../screens/ReceiptListScreen';
 import ReceiptUploadScreen from '../screens/ReceiptUploadScreen';
 import RewardResultScreen from '../screens/RewardResultScreen';
 import SurveyScreen from '../screens/SurveyScreen';
+
+export type ReceiptUploadLaunchMode = 'camera' | 'library';
+
+export type RootStackParamList = {
+  Home: undefined;
+  ReceiptUpload:
+    | {
+        autoStart?: boolean;
+        launchMode?: ReceiptUploadLaunchMode;
+      }
+    | undefined;
+  ReceiptList: undefined;
+  Survey: undefined;
+  RewardResult: undefined;
+};
 
 export const RootStack = createNativeStackNavigator({
   initialRouteName: 'Home',
@@ -45,8 +57,6 @@ export const RootStack = createNativeStackNavigator({
     },
   },
 });
-
-export type RootStackParamList = StaticParamList<typeof RootStack>;
 
 declare global {
   namespace ReactNavigation {

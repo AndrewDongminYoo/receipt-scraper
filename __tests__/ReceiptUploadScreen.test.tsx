@@ -1,5 +1,6 @@
 import React from 'react';
 import { screen, userEvent, waitFor } from '@testing-library/react-native';
+import { useRoute } from '@react-navigation/native';
 import DocumentScanner, {
   ScanDocumentResponseStatus,
 } from 'react-native-document-scanner-plugin';
@@ -16,6 +17,11 @@ import { recognizeReceiptText } from '../src/api/ocr';
 import { getUseLibraryPicker } from '../src/utils/featureFlags';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
 import type { ReceiptItem, ReceiptUploadResponse } from '../src/types/receipt';
+
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: jest.fn(),
+}));
 
 jest.mock('react-native-document-scanner-plugin', () => ({
   __esModule: true,
@@ -67,6 +73,7 @@ const mockedRecognizeReceiptText = recognizeReceiptText as jest.MockedFunction<
 const mockedGetUseLibraryPicker = getUseLibraryPicker as jest.MockedFunction<
   typeof getUseLibraryPicker
 >;
+const mockedUseRoute = useRoute as jest.MockedFunction<typeof useRoute>;
 
 const mockAsset: Asset = {
   fileName: 'receipt-001.jpg',
@@ -118,6 +125,11 @@ beforeEach(() => {
   jest.useFakeTimers();
   consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   setPlatformOS('ios');
+  mockedUseRoute.mockReturnValue({
+    key: 'ReceiptUpload-test',
+    name: 'ReceiptUpload',
+    params: undefined,
+  } as never);
   mockedGetUseLibraryPicker.mockResolvedValue(false);
   mockedLaunchCamera.mockResolvedValue({
     assets: [mockAsset],
@@ -287,6 +299,28 @@ test('uses launchImageLibrary when feature flag is true', async () => {
   expectNoActWarnings();
 });
 
+test('auto-starts library capture when launched with library intent', async () => {
+  mockedUseRoute.mockReturnValue({
+    key: 'ReceiptUpload-library',
+    name: 'ReceiptUpload',
+    params: {
+      autoStart: true,
+      launchMode: 'library',
+    },
+  } as never);
+  mockedLaunchImageLibrary.mockResolvedValueOnce({
+    assets: [mockAsset],
+  } as ImagePickerResponse);
+
+  renderWithQueryClient(<ReceiptUploadScreen />);
+
+  await waitFor(() => {
+    expect(mockedLaunchImageLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
+});
+
 test('uses DocumentScanner on ios and previews the first scanned page', async () => {
   const user = userEvent.setup();
 
@@ -310,6 +344,31 @@ test('uses DocumentScanner on ios and previews the first scanned page', async ()
   expect(mockedLaunchCamera).not.toHaveBeenCalled();
   expect(screen.getByTestId('upload-receipt-button')).toBeEnabled();
   expectNoActWarnings();
+});
+
+test('auto-starts camera capture when launched with camera intent', async () => {
+  mockedUseRoute.mockReturnValue({
+    key: 'ReceiptUpload-camera',
+    name: 'ReceiptUpload',
+    params: {
+      autoStart: true,
+      launchMode: 'camera',
+    },
+  } as never);
+  mockedScanDocument.mockResolvedValueOnce({
+    scannedImages: [
+      'file:///tmp/scan-page-1.jpg',
+      'file:///tmp/scan-page-2.jpg',
+    ],
+    status: ScanDocumentResponseStatus.Success,
+  });
+
+  renderWithQueryClient(<ReceiptUploadScreen />);
+
+  const previewImage = await screen.findByTestId('receipt-preview-image');
+  expect(previewImage.props.source).toEqual({
+    uri: 'file:///tmp/scan-page-1.jpg',
+  });
 });
 
 test('falls back to launchCamera when ios document scanner throws', async () => {
