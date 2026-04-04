@@ -110,6 +110,7 @@ const validReceiptOcrText = [
 ].join('\n');
 
 let consoleErrorSpy: jest.SpyInstance;
+let consoleWarnSpy: jest.SpyInstance;
 const originalPlatformOS = Platform.OS;
 
 function setPlatformOS(os: 'android' | 'ios') {
@@ -132,6 +133,7 @@ function expectNoActWarnings() {
 beforeEach(() => {
   jest.useFakeTimers();
   consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
   setPlatformOS('ios');
   mockedUseRoute.mockReturnValue({
     key: 'ReceiptUpload-test',
@@ -154,6 +156,7 @@ afterEach(() => {
   jest.clearAllTimers();
   jest.useRealTimers();
   consoleErrorSpy.mockRestore();
+  consoleWarnSpy.mockRestore();
   Object.defineProperty(Platform, 'OS', {
     configurable: true,
     value: originalPlatformOS,
@@ -272,9 +275,10 @@ test('shows ocr_failed card when OCR throws', async () => {
 
 test('shows wrong_type card when OCR text does not match receipt patterns', async () => {
   const user = userEvent.setup();
+  const invalidOcrText = 'Hello World this is a document with no price';
 
   mockedRecognizeReceiptText.mockResolvedValueOnce({
-    text: 'Hello World this is a document with no price',
+    text: invalidOcrText,
     isEmpty: false,
   });
 
@@ -285,6 +289,12 @@ test('shows wrong_type card when OCR text does not match receipt patterns', asyn
   expect(
     await screen.findByTestId('receipt-capture-failure-wrong-type'),
   ).toBeTruthy();
+  expect(consoleWarnSpy).toHaveBeenCalledWith(
+    '[ReceiptUploadScreen] Rejected OCR text as non-itemized receipt',
+    expect.objectContaining({
+      ocrText: invalidOcrText,
+    }),
+  );
   expectNoActWarnings();
 });
 

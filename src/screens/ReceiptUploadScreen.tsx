@@ -36,7 +36,10 @@ import {
   getUseLibraryPicker,
   setUseLibraryPicker,
 } from '../utils/featureFlags';
-import { looksLikeReceiptText } from '../features/receipts/receiptValidation';
+import {
+  extractReceiptMetadata,
+  looksLikeReceiptText,
+} from '../features/receipts/receiptValidation';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
@@ -231,6 +234,14 @@ function ReceiptUploadScreen() {
       }
 
       if (!looksLikeReceiptText(recognition.text)) {
+        console.warn(
+          '[ReceiptUploadScreen] Rejected OCR text as non-itemized receipt',
+          {
+            extractedMetadata: extractReceiptMetadata(recognition.text),
+            fileName: nextAsset.fileName,
+            ocrText: recognition.text,
+          },
+        );
         setCaptureFailure('wrong_type');
         return;
       }
