@@ -57,5 +57,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 jest.mock('@react-native-ml-kit/text-recognition', () => ({
   __esModule: true,
+  TextRecognitionScript: {
+    CHINESE: 'Chinese',
+    DEVANAGARI: 'Devanagari',
+    JAPANESE: 'Japanese',
+    KOREAN: 'Korean',
+    LATIN: 'Latin',
+  },
   default: { recognize: jest.fn() },
 }));

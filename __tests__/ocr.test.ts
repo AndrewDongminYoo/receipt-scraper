@@ -1,4 +1,6 @@
-import TextRecognition from '@react-native-ml-kit/text-recognition';
+import TextRecognition, {
+  TextRecognitionScript,
+} from '@react-native-ml-kit/text-recognition';
 import { recognizeReceiptText, OcrError } from '../src/api/ocr';
 
 const mockedRecognize = TextRecognition.recognize as jest.MockedFunction<
@@ -19,6 +21,10 @@ test('returns text and isEmpty=false for normal OCR output', async () => {
 
   expect(result.text).toBe('TOTAL $12.99');
   expect(result.isEmpty).toBe(false);
+  expect(mockedRecognize).toHaveBeenCalledWith(
+    'file:///tmp/receipt.jpg',
+    TextRecognitionScript.KOREAN,
+  );
 });
 
 test('returns isEmpty=true when ML Kit yields empty text', async () => {
