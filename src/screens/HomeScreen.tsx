@@ -97,7 +97,7 @@ function HomeScreen() {
       >
         <Pressable
           onPress={() => setUploadSheetVisible(false)}
-          style={styles.overlay}
+          style={styles.sheetOverlay}
           testID="upload-sheet-overlay"
         >
           <Pressable
@@ -105,25 +105,51 @@ function HomeScreen() {
             style={styles.sheet}
             testID="upload-source-sheet"
           >
-            <Text style={styles.sheetTitle}>Choose receipt source</Text>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetEyebrow}>Receipt upload</Text>
+            <Text style={styles.sheetTitle}>Choose how to start</Text>
             <Text style={styles.sheetDescription}>
-              Start with the camera scanner or import a saved receipt photo.
+              Use the iOS document scanner first, or bring in a receipt you
+              already saved.
             </Text>
-            <View style={styles.sheetButtonGroup}>
-              <Pressable
-                onPress={() => navigateToUpload('library')}
-                style={[styles.sheetButton, styles.secondaryButton]}
-                testID="upload-source-library"
-              >
-                <Text style={styles.secondaryButtonText}>Gallery</Text>
-              </Pressable>
-              <Pressable
-                onPress={openScannerGuide}
-                style={[styles.sheetButton, styles.primaryButton]}
-                testID="upload-source-camera"
-              >
-                <Text style={styles.primaryButtonText}>Camera</Text>
-              </Pressable>
+            <View style={styles.sourceList}>
+              <View style={styles.sourceRow}>
+                <View style={styles.sourceCopyGroup}>
+                  <View style={[styles.sourceBadge, styles.galleryBadge]} />
+                  <View style={styles.sourceTextGroup}>
+                    <Text style={styles.sourceTitle}>Saved receipt photo</Text>
+                    <Text style={styles.sourceDescription}>
+                      Import a receipt image from the photo library.
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => navigateToUpload('library')}
+                  style={[styles.sourceAction, styles.primaryButton]}
+                  testID="upload-source-library"
+                >
+                  <Text style={styles.primaryButtonText}>Gallery</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.sourceRow}>
+                <View style={styles.sourceCopyGroup}>
+                  <View style={[styles.sourceBadge, styles.cameraBadge]} />
+                  <View style={styles.sourceTextGroup}>
+                    <Text style={styles.sourceTitle}>Scan with camera</Text>
+                    <Text style={styles.sourceDescription}>
+                      Open VisionKit and review pages before upload.
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={openScannerGuide}
+                  style={[styles.sourceAction, styles.primaryButton]}
+                  testID="upload-source-camera"
+                >
+                  <Text style={styles.primaryButtonText}>Camera</Text>
+                </Pressable>
+              </View>
             </View>
           </Pressable>
         </Pressable>
@@ -135,7 +161,7 @@ function HomeScreen() {
         transparent
         visible={isScannerGuideVisible}
       >
-        <View style={styles.overlay} testID="scanner-guide-overlay">
+        <View style={styles.guideOverlay} testID="scanner-guide-overlay">
           <View style={styles.guideCard} testID="scanner-guide-modal">
             <Pressable
               accessibilityRole="button"
@@ -147,20 +173,42 @@ function HomeScreen() {
             </Pressable>
             <Text style={styles.guideTitle}>Scan the receipt clearly</Text>
             <Text style={styles.guideDescription}>
-              Capture one full receipt per shot. You can review and retake pages
-              in the system scanner before upload.
+              Capture one receipt per shot. You can review, crop, rotate, and
+              retake pages in the system scanner before upload.
             </Text>
             <View style={styles.guidePreview}>
-              <View style={styles.guidePreviewPaper}>
-                <View style={styles.guideHighlight} />
+              <View style={styles.guidePreviewFrame}>
+                <View style={styles.guideReceiptPaper}>
+                  <View style={styles.guideReceiptHeader}>
+                    <Text style={styles.guideReceiptStore}>YG Market</Text>
+                    <Text style={styles.guideReceiptDate}>2026/04/04</Text>
+                  </View>
+                  <View style={styles.guideReceiptDivider} />
+                  <View style={styles.guideReceiptHighlightBand} />
+                  <View style={styles.guideReceiptLineGroup}>
+                    <View style={styles.guideReceiptLine} />
+                    <View
+                      style={[
+                        styles.guideReceiptLine,
+                        styles.guideReceiptLineShort,
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.guideReceiptLine,
+                        styles.guideReceiptLineMedium,
+                      ]}
+                    />
+                  </View>
+                </View>
               </View>
             </View>
             <Text style={styles.guideFootnote}>
-              Overseas receipts are not eligible for points in this prototype.
+              Overseas receipts are excluded in this prototype flow.
             </Text>
             <Pressable
               onPress={() => navigateToUpload('camera')}
-              style={[styles.sheetButton, styles.primaryButton]}
+              style={[styles.ctaButton, styles.primaryButton]}
               testID="scanner-guide-start"
             >
               <Text style={styles.primaryButtonText}>Start scan</Text>
@@ -208,6 +256,7 @@ const styles = StyleSheet.create({
   guideCard: {
     backgroundColor: '#ffffff',
     borderRadius: 28,
+    maxWidth: 360,
     padding: 24,
     width: '100%',
   },
@@ -225,26 +274,85 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  guideHighlight: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(168, 85, 247, 0.28)',
-    borderRadius: 18,
-    height: 56,
-    marginTop: 34,
-    width: '88%',
+  guideOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
   },
   guidePreview: {
     alignItems: 'center',
     marginBottom: 16,
     marginTop: 18,
   },
-  guidePreviewPaper: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    height: 136,
-    justifyContent: 'center',
-    overflow: 'hidden',
+  guidePreviewFrame: {
+    backgroundColor: '#eef2ff',
+    borderRadius: 22,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     width: '100%',
+  },
+  guideReceiptDate: {
+    color: '#4b5563',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  guideReceiptDivider: {
+    backgroundColor: '#d1d5db',
+    height: 1,
+    marginTop: 10,
+  },
+  guideReceiptHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  guideReceiptHighlightBand: {
+    backgroundColor: 'rgba(168, 85, 247, 0.3)',
+    borderRadius: 18,
+    height: 44,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 18,
+  },
+  guideReceiptLine: {
+    backgroundColor: '#9ca3af',
+    borderRadius: 999,
+    height: 6,
+    width: '100%',
+  },
+  guideReceiptLineGroup: {
+    gap: 12,
+    marginTop: 22,
+    position: 'relative',
+  },
+  guideReceiptLineMedium: {
+    width: '72%',
+  },
+  guideReceiptLineShort: {
+    width: '56%',
+  },
+  guideReceiptPaper: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    minHeight: 148,
+    overflow: 'hidden',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    shadowColor: '#cbd5e1',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+  },
+  guideReceiptStore: {
+    color: '#111827',
+    fontSize: 12,
+    fontWeight: '700',
   },
   guideTitle: {
     color: '#111827',
@@ -254,43 +362,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  overlay: {
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: 20,
-  },
   primaryButton: {
     backgroundColor: '#8b1cf7',
   },
   primaryButtonText: {
     color: '#ffffff',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
   },
-  secondaryButton: {
-    backgroundColor: '#f3f4f6',
+  cameraBadge: {
+    backgroundColor: '#e0f2fe',
   },
-  secondaryButtonText: {
-    color: '#111827',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  sheet: {
-    backgroundColor: '#ffffff',
-    borderRadius: 28,
-    padding: 24,
-  },
-  sheetButton: {
+  ctaButton: {
     alignItems: 'center',
     borderRadius: 18,
     justifyContent: 'center',
     minHeight: 56,
     paddingHorizontal: 16,
+    width: '100%',
   },
-  sheetButtonGroup: {
-    gap: 12,
-    marginTop: 24,
+  galleryBadge: {
+    backgroundColor: '#ede9fe',
+  },
+  sheet: {
+    backgroundColor: '#ffffff',
+    borderRadius: 28,
+    padding: 24,
   },
   sheetDescription: {
     color: '#6b7280',
@@ -298,10 +395,78 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: 8,
   },
+  sheetEyebrow: {
+    color: '#8b5cf6',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    backgroundColor: '#d1d5db',
+    borderRadius: 999,
+    height: 5,
+    marginBottom: 18,
+    width: 52,
+  },
+  sheetOverlay: {
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 20,
+  },
   sheetTitle: {
     color: '#111827',
     fontSize: 24,
     fontWeight: '800',
+    marginTop: 8,
+  },
+  sourceAction: {
+    alignItems: 'center',
+    borderRadius: 999,
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 104,
+    paddingHorizontal: 18,
+  },
+  sourceBadge: {
+    borderRadius: 14,
+    height: 42,
+    width: 42,
+  },
+  sourceCopyGroup: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+    marginRight: 12,
+  },
+  sourceDescription: {
+    color: '#6b7280',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  sourceList: {
+    gap: 12,
+    marginTop: 24,
+  },
+  sourceRow: {
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 22,
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  sourceTextGroup: {
+    flex: 1,
+  },
+  sourceTitle: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '700',
   },
   title: {
     fontSize: 28,
