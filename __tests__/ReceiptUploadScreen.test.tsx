@@ -99,8 +99,15 @@ const successResponse: ReceiptUploadResponse = {
   receipt: mockReceipt,
 };
 
-const validReceiptOcrText =
-  '상품명 김밥\n수량 1\n금액 3,500원\n부가세 318원\n합계 3,500원\n카드 일시불';
+const validReceiptOcrText = [
+  '팀리미티드 편의점',
+  '상품명 단가 수량 금액',
+  '김밥 3,500 1 3,500',
+  '삼각김밥 1,200 2 2,400',
+  '부가세 536원',
+  '합계 5,900원',
+  '카드 일시불',
+].join('\n');
 
 let consoleErrorSpy: jest.SpyInstance;
 const originalPlatformOS = Platform.OS;
@@ -285,7 +292,7 @@ test('accepts Korean receipt OCR text with comma-separated won amounts', async (
   const user = userEvent.setup();
 
   mockedRecognizeReceiptText.mockResolvedValueOnce({
-    text: '상품명 김밥\n수량 1\n금액 3,500원\n부가세 318원\n합계 3,500원\n카드 일시불',
+    text: validReceiptOcrText,
     isEmpty: false,
   });
 
@@ -296,6 +303,25 @@ test('accepts Korean receipt OCR text with comma-separated won amounts', async (
   expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
   expect(screen.getByTestId('upload-receipt-button')).toBeEnabled();
   expect(screen.queryByTestId('receipt-capture-failure-wrong-type')).toBeNull();
+  expectNoActWarnings();
+});
+
+test('rejects totals-only OCR text without itemized unit price and quantity lines', async () => {
+  const user = userEvent.setup();
+
+  mockedRecognizeReceiptText.mockResolvedValueOnce({
+    text: '결제금액 5,900원\n부가세 536원\n합계 5,900원\n카드 일시불',
+    isEmpty: false,
+  });
+
+  renderWithQueryClient(<ReceiptUploadScreen />);
+
+  await user.press(screen.getByTestId('pick-receipt-button'));
+
+  expect(
+    await screen.findByTestId('receipt-capture-failure-wrong-type'),
+  ).toBeTruthy();
+  expect(screen.getByTestId('upload-receipt-button')).toBeDisabled();
   expectNoActWarnings();
 });
 

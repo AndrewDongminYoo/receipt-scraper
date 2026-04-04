@@ -9,6 +9,7 @@ import type {
   ReceiptItem,
   ReceiptUploadResponse,
 } from '../types/receipt';
+import { extractReceiptMetadata } from '../features/receipts/receiptValidation';
 import { wait } from '../utils/wait';
 
 const LIST_DELAY_MS = 450;
@@ -49,6 +50,18 @@ function getHeaderValue(
   }
 
   return typeof rawHeaderValue === 'string' ? rawHeaderValue : undefined;
+}
+
+function decodeHeaderValue(value?: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 async function mockUploadAdapter(
@@ -101,16 +114,25 @@ async function mockUploadAdapter(
     uploadedFileNames.add(fileName);
   }
 
+  const ocrText = decodeHeaderValue(
+    getHeaderValue(config, 'x-receipt-ocr-text'),
+  );
+  const extractedMetadata = ocrText
+    ? extractReceiptMetadata(ocrText)
+    : undefined;
+
   const receipt: ReceiptItem = {
+    extractedMetadata,
     fileName,
     fileSize:
       Number(getHeaderValue(config, 'x-receipt-size') || 0) || undefined,
     id: `receipt-${Date.now()}`,
     imageUrl: getHeaderValue(config, 'x-receipt-uri') || '',
     mimeType: getHeaderValue(config, 'x-receipt-type'),
+    ocrText,
     purchasedAt: new Date().toISOString(),
     status: 'pending',
-    storeName: 'Pending Review',
+    storeName: extractedMetadata?.storeName || 'Pending Review',
   };
 
   mockReceipts.unshift(receipt);
@@ -167,6 +189,7 @@ export async function uploadReceipt({
         'x-capture-date': captureDate,
         'x-device-locale': deviceLocale,
         'x-mock-failure': shouldFail ? 'true' : 'false',
+        'x-receipt-ocr-text': encodeURIComponent(ocrText),
         'x-receipt-file-name': asset.fileName || 'receipt.jpg',
         'x-receipt-size': asset.fileSize ? String(asset.fileSize) : '',
         'x-receipt-type': asset.type || 'image/jpeg',

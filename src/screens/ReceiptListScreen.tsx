@@ -26,6 +26,46 @@ function renderReceiptItem({ item }: { item: ReceiptItem }) {
       <Text style={styles.receiptMeta}>
         Uploaded: {formatTimestamp(item.purchasedAt)}
       </Text>
+
+      {item.extractedMetadata ? (
+        <View style={styles.metadataSection}>
+          <Text style={styles.sectionLabel}>Extracted metadata</Text>
+          {item.extractedMetadata.totalAmount ? (
+            <Text style={styles.receiptMeta}>
+              Total: {item.extractedMetadata.totalAmount}
+            </Text>
+          ) : null}
+          {item.extractedMetadata.vatAmount ? (
+            <Text style={styles.receiptMeta}>
+              VAT: {item.extractedMetadata.vatAmount}
+            </Text>
+          ) : null}
+          {item.extractedMetadata.paymentMethod ? (
+            <Text style={styles.receiptMeta}>
+              Payment: {item.extractedMetadata.paymentMethod}
+            </Text>
+          ) : null}
+
+          {item.extractedMetadata.lineItems.map((lineItem, index) => (
+            <Text
+              key={`${item.id}-line-item-${index}`}
+              style={styles.receiptMeta}
+              testID={`receipt-line-item-${item.id}-${index}`}
+            >
+              {`${lineItem.name} · Qty ${lineItem.quantity || '?'} · Unit ${
+                lineItem.unitPrice || '?'
+              } · Amount ${lineItem.amount || '?'}`}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
+      {item.ocrText ? (
+        <View style={styles.metadataSection}>
+          <Text style={styles.sectionLabel}>Extracted text</Text>
+          <Text style={styles.ocrText}>{item.ocrText}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -121,8 +161,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  metadataSection: {
+    borderTopColor: '#e5e7eb',
+    borderTopWidth: 1,
+    marginTop: 12,
+    paddingTop: 12,
+  },
+  ocrText: {
+    color: '#374151',
+    fontFamily: 'Courier',
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+  },
   retryButtonWrapper: {
     width: '100%',
+  },
+  sectionLabel: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 6,
   },
 });
 
