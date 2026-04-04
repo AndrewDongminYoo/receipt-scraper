@@ -15,7 +15,7 @@ if lsof -ti:8081 >/dev/null 2>&1; then
 fi
 
 # Clean up only when the Watchman state is corrupted
-watchman watch-del "$PROJECT_ROOT" >/dev/null 2>&1 || true
-watchman watch-project "$PROJECT_ROOT" >/dev/null
+watchman watch-del "${PROJECT_ROOT}" >/dev/null 2>&1 || true
+watchman watch-project "${PROJECT_ROOT}" >/dev/null
 
 exec npx react-native start --reset-cache
