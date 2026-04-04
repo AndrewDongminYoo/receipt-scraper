@@ -1,11 +1,24 @@
 version: '0.2'
-ignorePaths: []
+language: en-us
+ignorePaths:
+  - ios/*.xcodeproj/project.pbxproj
+  - .gitignore
 dictionaryDefinitions:
   - name: custom-dictionary
     path: ./.cspell/custom-dictionary.txt
     addWords: true
 dictionaries:
   - custom-dictionary
-words: []
+  - sortwareTerms
+  - filetypes
+  - en_us
+  - en-gb
+  - typescript
+  - python
+  - bash
+  - ruby
+  - cpp
+words: [pbxproj]
+allowCompoundWords: true
 ignoreWords: []
 import: []
