@@ -39,7 +39,7 @@ MD024: false
 # single-title/single-h1 - Multiple top-level headings in the same document
 #MD025: false
 # no-trailing-punctuation - Trailing punctuation in heading
-#MD026: false
+MD026: false
 # no-multiple-space-blockquote - Multiple spaces after blockquote symbol
 MD027: false
 # no-blanks-blockquote - Blank line inside blockquote
@@ -59,7 +59,7 @@ MD032: false
 # hr-style - Horizontal rule style
 MD035: false
 # no-emphasis-as-heading - Emphasis used instead of a heading
-#MD036: false
+MD036: false
 # no-space-in-emphasis - Spaces inside emphasis markers
 #MD037: false
 # no-space-in-code - Spaces inside code span elements

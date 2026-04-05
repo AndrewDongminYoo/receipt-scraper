@@ -19,3 +19,4 @@ xcscheme
 xcschemes
 xcshareddata
 xctest
+xcworkspace
