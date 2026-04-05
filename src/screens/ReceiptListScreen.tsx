@@ -1,6 +1,13 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button, FlatList, StyleSheet, Text, View } from 'react-native';
+import {
+  Button,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { fetchReceipts, receiptQueryKeys } from '../api/receipts';
 import ScreenHeader from '../components/ScreenHeader';
 import StateCard from '../components/StateCard';
@@ -71,10 +78,12 @@ function renderReceiptItem({ item }: { item: ReceiptItem }) {
 }
 
 function ReceiptListScreen() {
-  const { data, error, isError, isLoading, refetch } = useQuery({
+  const { data, error, isError, isFetching, isLoading, refetch } = useQuery({
     queryFn: fetchReceipts,
     queryKey: receiptQueryKeys.all,
   });
+
+  const isRefreshing = isFetching && !isLoading;
 
   const receipts = data ?? [];
 
@@ -125,6 +134,13 @@ function ReceiptListScreen() {
           contentContainerStyle={styles.listContent}
           data={receipts}
           keyExtractor={item => item.id}
+          refreshControl={
+            <RefreshControl
+              onRefresh={refetch}
+              refreshing={isRefreshing}
+              testID="receipt-list-refresh-control"
+            />
+          }
           renderItem={renderReceiptItem}
           testID="receipt-list-success"
         />

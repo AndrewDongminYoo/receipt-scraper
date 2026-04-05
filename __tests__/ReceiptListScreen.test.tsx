@@ -121,6 +121,20 @@ test('renders uploaded receipts when data is available', async () => {
   expect(screen.getByText('Pending Review')).toBeTruthy();
 });
 
+test('supports pull-to-refresh to refetch receipts', async () => {
+  mockedFetchReceipts.mockResolvedValue([sampleReceipt]);
+
+  renderWithQueryClient(<ReceiptListScreen />);
+
+  expect(await screen.findByText('receipt-001.jpg')).toBeTruthy();
+
+  const flatList = screen.getByTestId('receipt-list-success');
+  const refreshControl = flatList.props.refreshControl;
+
+  expect(refreshControl).toBeTruthy();
+  expect(refreshControl.props.onRefresh).toBeDefined();
+});
+
 test('renders extracted receipt metadata and OCR text when available', async () => {
   mockedFetchReceipts.mockResolvedValue([sampleReceipt]);
 
