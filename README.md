@@ -109,19 +109,23 @@ The point of the fixed order is to prevent wasted time on abstractions before th
 
 ## Prototype Boundary
 
-The current upload flow is intentionally limited to selecting an existing image
-from the photo library with `react-native-image-picker`.
+The current upload flow covers more ground than the original Day 2 blueprint
+required. It now includes:
 
-That means the prototype does **not** yet include:
+- **Camera capture** via VisionKit `DocumentScanner` on iOS (with `launchCamera` fallback) and `launchCamera` on Android
+- **On-device OCR** via `@react-native-ml-kit/text-recognition` (Korean script default)
+- **Receipt validation** that checks for itemized content, amounts, and structural receipt keywords
+- **Refund detection** that blocks refund and cancellation receipts before upload
+- **Duplicate detection** via receipt fingerprinting against the query cache
+- **Feature flag** (`receipt_upload_use_library_picker`) persisted in AsyncStorage to toggle between camera and library picker modes
 
-- native camera capture
-- receipt corner detection
-- perspective flattening
-- on-device OCR
-- server-side duplicate or invalid-receipt feedback handling
+What remains **outside** the prototype boundary:
 
-This is deliberate. Day 5 closes out the prototype that exists today rather
-than half-building a production capture pipeline.
+- A real backend (all requests use a mock axios adapter with in-memory storage)
+- Persistent receipt or reward data (state resets on app reload)
+- Production release signing and store distribution
+- Firebase Remote Config integration (the flag name and semantics are documented but not wired to a remote source)
+- Batch or multi-receipt capture
 
 ## Tech Baseline
 
@@ -129,24 +133,27 @@ Use React Native CLI, not Expo, because the point is to practice the environment
 
 ### Installed Now
 
-| Package                          | Purpose               |
-| -------------------------------- | --------------------- |
-| `@tanstack/react-query`          | Server state          |
-| `@react-navigation/native`       | Navigation container  |
-| `@react-navigation/native-stack` | Native stack routing  |
-| `axios`                          | Mock HTTP uploads     |
-| `react-native`                   | Core mobile framework |
-| `react`                          | UI runtime            |
-| `react-hook-form`                | Survey form state     |
-| `react-native-image-picker`      | Photo library access  |
-| `react-native-safe-area-context` | Safe area handling    |
-| `react-native-screens`           | Native screen support |
-| `typescript`                     | Type checking         |
-| `zod`                            | Survey validation     |
+| Package                                     | Purpose                           |
+| ------------------------------------------- | --------------------------------- |
+| `@react-native-async-storage/async-storage` | Feature flag persistence          |
+| `@react-native-ml-kit/text-recognition`     | On-device OCR                     |
+| `@react-navigation/native`                  | Navigation container              |
+| `@react-navigation/native-stack`            | Native stack routing              |
+| `@tanstack/react-query`                     | Server state                      |
+| `axios`                                     | Mock HTTP uploads                 |
+| `react`                                     | UI runtime                        |
+| `react-hook-form`                           | Survey form state                 |
+| `react-native`                              | Core mobile framework             |
+| `react-native-document-scanner-plugin`      | VisionKit document scanning (iOS) |
+| `react-native-image-picker`                 | Camera and photo library access   |
+| `react-native-safe-area-context`            | Safe area handling                |
+| `react-native-screens`                      | Native screen support             |
+| `typescript`                                | Type checking                     |
+| `zod`                                       | Survey validation                 |
 
 ### Planned Later
 
-No additional libraries are planned for Day 5. The remaining scope is polish and cleanup.
+No additional libraries are planned. The sprint scope is closed.
 
 ## Testing Stack
 
@@ -253,11 +260,11 @@ The first expansion points would be:
 
 These trade-offs are expected for the prototype phase:
 
-- The Day 2 upload path uses a mock `axios` adapter instead of a real backend, so upload success and failure are deterministic practice flows rather than production networking.
-- Receipt intake still starts from the photo library instead of a production camera flow, so the repository does not yet exercise document scanning, flattening, or OCR accuracy.
+- All network requests use a mock `axios` adapter with in-memory storage instead of a real backend, so upload success and failure are deterministic practice flows rather than production networking.
 - Receipt and reward data live in memory only, so state resets on reload and there is no persistence or offline recovery path.
-- Firebase Remote Config is a planned runtime boundary for toggling legacy image import, but the prototype does not yet fetch or apply remote configuration.
-- Networking, navigation, validation, and list behavior remain intentionally simple even after implementation because the goal is confidence, not completeness.
+- The feature flag (`receipt_upload_use_library_picker`) is persisted in AsyncStorage but is not wired to Firebase Remote Config. The flag name and semantics are documented for future integration.
+- On-device OCR accuracy has not been validated against a production receipt corpus. The current validation logic is tuned for Korean mart and convenience store receipts.
+- Networking, navigation, validation, and list behavior remain intentionally simple because the goal is regained confidence, not production completeness.
 
 ## Production Receipt Capture Follow-Up
 
