@@ -3,11 +3,13 @@
  */
 
 import React from 'react';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { render, screen, userEvent } from '@testing-library/react-native';
+
 import App from '../App';
-import { RootStack } from '../src/navigation/RootNavigator';
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
+import { RootStack } from '../src/navigation/RootNavigator';
 
 const RootStackComponent = RootStack.getComponent();
 
@@ -22,6 +24,7 @@ afterEach(() => {
 
 test('App renders without crashing with the Day 3 providers mounted', () => {
   render(<App />);
+  expect(screen.toJSON()).not.toBeNull();
 });
 
 test('renders the Home screen with all primary navigation buttons', () => {

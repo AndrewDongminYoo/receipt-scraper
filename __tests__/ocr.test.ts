@@ -1,7 +1,8 @@
 import TextRecognition, {
   TextRecognitionScript,
 } from '@react-native-ml-kit/text-recognition';
-import { recognizeReceiptText, OcrError } from '../src/api/ocr';
+
+import { OcrError, recognizeReceiptText } from '../src/api/ocr';
 
 const mockedRecognize = TextRecognition.recognize as jest.MockedFunction<
   typeof TextRecognition.recognize
@@ -47,10 +48,7 @@ test('OcrError preserves the original cause', async () => {
   const cause = new Error('native module error');
   mockedRecognize.mockRejectedValueOnce(cause);
 
-  try {
-    await recognizeReceiptText('file:///tmp/bad.jpg');
-  } catch (error) {
-    expect(error).toBeInstanceOf(OcrError);
-    expect((error as OcrError).cause).toBe(cause);
-  }
+  const error = await recognizeReceiptText('file:///tmp/bad.jpg').catch(e => e);
+  expect(error).toBeInstanceOf(OcrError);
+  expect((error as OcrError).cause).toBe(cause);
 });

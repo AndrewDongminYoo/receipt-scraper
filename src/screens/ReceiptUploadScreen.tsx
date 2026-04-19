@@ -1,17 +1,4 @@
 import * as React from 'react';
-import { useRoute, type RouteProp } from '@react-navigation/native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import type {
-  Asset,
-  CameraOptions,
-  ImageLibraryOptions,
-} from 'react-native-image-picker';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import DocumentScanner, {
-  ResponseType,
-  ScanDocumentResponseStatus,
-} from 'react-native-document-scanner-plugin';
 import {
   Button,
   Image,
@@ -22,13 +9,35 @@ import {
   Text,
   View,
 } from 'react-native';
+
+import { type RouteProp, useRoute } from '@react-navigation/native';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
+import DocumentScanner, {
+  ResponseType,
+  ScanDocumentResponseStatus,
+} from 'react-native-document-scanner-plugin';
+import type {
+  Asset,
+  CameraOptions,
+  ImageLibraryOptions,
+} from 'react-native-image-picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+
+import { type OcrResult, recognizeReceiptText } from '../api/ocr';
 import {
   fetchReceipts,
   receiptQueryKeys,
   uploadReceipt,
   type UploadReceiptParams,
 } from '../api/receipts';
-import { recognizeReceiptText, type OcrResult } from '../api/ocr';
+import ScreenHeader from '../components/ScreenHeader';
+import SectionCard from '../components/SectionCard';
+import StateCard from '../components/StateCard';
+import {
+  extractReceiptMetadata,
+  looksLikeReceiptText,
+} from '../features/receipts/receiptValidation';
 import type {
   ReceiptUploadLaunchMode,
   RootStackParamList,
@@ -38,13 +47,6 @@ import {
   getUseLibraryPicker,
   setUseLibraryPicker,
 } from '../utils/featureFlags';
-import {
-  extractReceiptMetadata,
-  looksLikeReceiptText,
-} from '../features/receipts/receiptValidation';
-import ScreenHeader from '../components/ScreenHeader';
-import SectionCard from '../components/SectionCard';
-import StateCard from '../components/StateCard';
 
 const cameraOptions: CameraOptions = {
   mediaType: 'photo',
@@ -71,7 +73,7 @@ function formatFileSize(fileSize?: number) {
 }
 
 function getUploadErrorMessage(error: unknown) {
-  if (axios.isAxiosError<{ message?: string }>(error)) {
+  if (isAxiosError<{ message?: string }>(error)) {
     return (
       error.response?.data?.message ||
       error.message ||

@@ -1,15 +1,15 @@
 import {
-  extractReceiptMetadata,
-  looksLikeReceiptText,
-  normalizeReceiptText,
-} from '../src/features/receipts/receiptValidation';
-import {
   basicKeywordFixtures,
   basicMetadataFixture,
   convenienceReceiptFixtures,
   emartFixtures,
   refundFixtures,
 } from '../jest/fixtures/receipts';
+import {
+  extractReceiptMetadata,
+  looksLikeReceiptText,
+  normalizeReceiptText,
+} from '../src/features/receipts/receiptValidation';
 
 test('normalizes OCR whitespace before receipt checks', () => {
   expect(normalizeReceiptText('상품명  김밥\n\n합계   3,500원')).toBe(

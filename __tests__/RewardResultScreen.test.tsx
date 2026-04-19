@@ -1,8 +1,10 @@
 import React from 'react';
+
 import { screen, userEvent } from '@testing-library/react-native';
-import RewardResultScreen from '../src/screens/RewardResultScreen';
-import { fetchLatestRewardResult } from '../src/api/rewards';
+
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
+import { fetchLatestRewardResult } from '../src/api/rewards';
+import RewardResultScreen from '../src/screens/RewardResultScreen';
 
 const mockedNavigate = jest.fn();
 

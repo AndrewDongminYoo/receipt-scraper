@@ -1,4 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { default as AsyncStorage } from '@react-native-async-storage/async-storage';
+
 import {
   type FeatureFlagStore,
   getUseLibraryPicker,

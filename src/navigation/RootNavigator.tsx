@@ -1,6 +1,8 @@
 import * as React from 'react';
+
 import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import HomeScreen from '../screens/HomeScreen';
 import ReceiptListScreen from '../screens/ReceiptListScreen';
 import ReceiptUploadScreen from '../screens/ReceiptUploadScreen';
@@ -59,7 +61,9 @@ export const RootStack = createNativeStackNavigator({
 });
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace ReactNavigation {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface RootParamList extends RootStackParamList {}
   }
 }

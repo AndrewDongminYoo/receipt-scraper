@@ -4,12 +4,13 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import type { Asset } from 'react-native-image-picker';
+
+import { extractReceiptMetadata } from '../features/receipts/receiptValidation';
 import type {
   ApiErrorResponse,
   ReceiptItem,
   ReceiptUploadResponse,
 } from '../types/receipt';
-import { extractReceiptMetadata } from '../features/receipts/receiptValidation';
 import { wait } from '../utils/wait';
 
 const LIST_DELAY_MS = 450;

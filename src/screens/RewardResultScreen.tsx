@@ -1,8 +1,10 @@
 import * as React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
+
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+
 import { fetchLatestRewardResult, rewardResultQueryKeys } from '../api/rewards';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';

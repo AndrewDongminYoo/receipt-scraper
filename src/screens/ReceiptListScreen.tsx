@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import {
   Button,
   FlatList,
@@ -8,6 +7,9 @@ import {
   Text,
   View,
 } from 'react-native';
+
+import { useQuery } from '@tanstack/react-query';
+
 import { fetchReceipts, receiptQueryKeys } from '../api/receipts';
 import ScreenHeader from '../components/ScreenHeader';
 import StateCard from '../components/StateCard';

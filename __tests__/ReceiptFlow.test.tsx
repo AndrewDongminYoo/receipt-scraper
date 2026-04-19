@@ -1,21 +1,23 @@
 import React from 'react';
+import { Platform } from 'react-native';
+
+import { useRoute } from '@react-navigation/native';
 import {
   screen,
   userEvent,
   waitFor,
   within,
 } from '@testing-library/react-native';
-import { useRoute } from '@react-navigation/native';
 import DocumentScanner from 'react-native-document-scanner-plugin';
-import { Platform } from 'react-native';
 import {
-  launchCamera,
   type Asset,
   type ImagePickerResponse,
+  launchCamera,
 } from 'react-native-image-picker';
-import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
-import ReceiptListScreen from '../src/screens/ReceiptListScreen';
+
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
+import ReceiptListScreen from '../src/screens/ReceiptListScreen';
+import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
 import type { ReceiptItem } from '../src/types/receipt';
 
 jest.mock('@react-navigation/native', () => ({

@@ -1,8 +1,10 @@
 import React from 'react';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { screen, userEvent, waitFor } from '@testing-library/react-native';
-import { RootStack } from '../src/navigation/RootNavigator';
+
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
+import { RootStack } from '../src/navigation/RootNavigator';
 
 const RootStackComponent = RootStack.getComponent();
 

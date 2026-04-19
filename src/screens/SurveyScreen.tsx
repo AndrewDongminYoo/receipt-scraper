@@ -1,8 +1,4 @@
 import * as React from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Controller, useForm } from 'react-hook-form';
 import {
   Button,
   Pressable,
@@ -11,12 +7,18 @@ import {
   Text,
   View,
 } from 'react-native';
+
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Controller, useForm } from 'react-hook-form';
+
 import { rewardResultQueryKeys, submitSurvey } from '../api/rewards';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import type { SurveyFormValues, SurveyFieldName } from '../types/survey';
+import type { SurveyFieldName, SurveyFormValues } from '../types/survey';
 import {
   surveyDefaultValues,
   surveyFieldOptions,

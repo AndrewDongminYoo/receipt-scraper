@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { default as AsyncStorage } from '@react-native-async-storage/async-storage';
 
 export type FeatureFlagName = 'receipt_upload_use_library_picker';
 

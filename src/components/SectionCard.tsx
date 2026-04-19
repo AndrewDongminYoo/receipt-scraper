@@ -1,9 +1,9 @@
 import * as React from 'react';
 import {
+  type StyleProp,
   StyleSheet,
   Text,
   View,
-  type StyleProp,
   type ViewStyle,
 } from 'react-native';
 

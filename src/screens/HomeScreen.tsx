@@ -1,7 +1,9 @@
 import * as React from 'react';
+import { Button, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Button, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+
 import type {
   ReceiptUploadLaunchMode,
   RootStackParamList,

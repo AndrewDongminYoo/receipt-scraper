@@ -1,23 +1,25 @@
 import React from 'react';
-import { screen, userEvent, waitFor } from '@testing-library/react-native';
+import { Platform } from 'react-native';
+
 import { useRoute } from '@react-navigation/native';
+import { screen, userEvent, waitFor } from '@testing-library/react-native';
 import DocumentScanner, {
   ScanDocumentResponseStatus,
 } from 'react-native-document-scanner-plugin';
-import { Platform } from 'react-native';
 import {
-  launchCamera,
-  launchImageLibrary,
   type Asset,
   type ImagePickerResponse,
+  launchCamera,
+  launchImageLibrary,
 } from 'react-native-image-picker';
-import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
-import { fetchReceipts, uploadReceipt } from '../src/api/receipts';
-import { recognizeReceiptText } from '../src/api/ocr';
-import { extractReceiptMetadata } from '../src/features/receipts/receiptValidation';
-import { getUseLibraryPicker } from '../src/utils/featureFlags';
+
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
+import { recognizeReceiptText } from '../src/api/ocr';
+import { fetchReceipts, uploadReceipt } from '../src/api/receipts';
+import { extractReceiptMetadata } from '../src/features/receipts/receiptValidation';
+import ReceiptUploadScreen from '../src/screens/ReceiptUploadScreen';
 import type { ReceiptItem, ReceiptUploadResponse } from '../src/types/receipt';
+import { getUseLibraryPicker } from '../src/utils/featureFlags';
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),

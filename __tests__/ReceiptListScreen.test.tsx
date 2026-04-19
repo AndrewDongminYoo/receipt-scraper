@@ -1,8 +1,10 @@
 import React from 'react';
+
 import { screen, userEvent } from '@testing-library/react-native';
-import ReceiptListScreen from '../src/screens/ReceiptListScreen';
-import { fetchReceipts } from '../src/api/receipts';
+
 import { renderWithQueryClient } from '../jest/renderWithQueryClient';
+import { fetchReceipts } from '../src/api/receipts';
+import ReceiptListScreen from '../src/screens/ReceiptListScreen';
 import type { ReceiptItem } from '../src/types/receipt';
 
 jest.mock('../src/api/receipts', () => ({
