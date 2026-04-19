@@ -20,7 +20,6 @@ module.exports = {
     '@react-native',
     'plugin:@typescript-eslint/recommended',
     'plugin:import/recommended',
-    'plugin:import/typescript',
     'plugin:react-hooks/recommended',
     'prettier',
   ],
@@ -35,15 +34,6 @@ module.exports = {
   settings: {
     react: {
       version: 'detect',
-    },
-    'import/resolver': {
-      typescript: {
-        alwaysTryTypes: true,
-        project: ['./tsconfig.json'],
-      },
-      node: {
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
-      },
     },
   },
 
@@ -61,19 +51,12 @@ module.exports = {
   ],
 
   rules: {
-    /**
-     * -------------------------
-     * General
-     * -------------------------
-     */
+    // --- General ---
     'no-console': ['warn', { allow: ['warn', 'error'] }],
     'no-debugger': 'warn',
 
-    /**
-     * -------------------------
-     * TypeScript
-     * -------------------------
-     */
+    // --- TypeScript ---
+    // Both base rules are off; unused-imports/no-unused-vars (below) owns this category.
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
     '@typescript-eslint/consistent-type-imports': [
@@ -96,18 +79,12 @@ module.exports = {
       },
     ],
 
-    /**
-     * -------------------------
-     * React / React Native
-     * -------------------------
-     */
+    // --- React / React Native ---
     'react/react-in-jsx-scope': 'off',
     'react/jsx-uses-react': 'off',
     'react/require-default-props': 'off',
     'react/prop-types': 'off',
     'react/display-name': 'off',
-
-    // 컴포넌트 선언 방식 통일
     'react/function-component-definition': [
       'error',
       {
@@ -116,19 +93,7 @@ module.exports = {
       },
     ],
 
-    /**
-     * -------------------------
-     * Hooks
-     * -------------------------
-     */
-    'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
-
-    /**
-     * -------------------------
-     * Imports
-     * -------------------------
-     */
+    // --- Imports ---
     'sort-imports': 'off',
     'import/order': 'off',
     'simple-import-sort/imports': [
@@ -149,8 +114,8 @@ module.exports = {
           ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
           // Side effect imports
           ['^\\u0000'],
-          // Style imports
-          ['^.+\\.s?css$', '^.+\\.less$', '^.+\\.styl$', '^.+\\.json$'],
+          // JSON imports
+          ['^.+\\.json$'],
         ],
       },
     ],
@@ -158,11 +123,11 @@ module.exports = {
     'import/first': 'error',
     'import/newline-after-import': 'error',
     'import/no-duplicates': 'error',
+    // Metro's resolver and React Native's Flow types cause false positives; disable both.
     'import/no-unresolved': 'off',
+    'import/namespace': 'off',
 
-    /**
-     * unused imports는 전용 플러그인으로 정리
-     */
+    // Unused-vars detection delegated entirely to this plugin (the two rules above must stay off).
     'unused-imports/no-unused-imports': 'error',
     'unused-imports/no-unused-vars': [
       'warn',
@@ -180,6 +145,7 @@ module.exports = {
     {
       files: ['*.js'],
       rules: {
+        '@typescript-eslint/no-require-imports': 'off',
         '@typescript-eslint/no-var-requires': 'off',
       },
     },
@@ -195,37 +161,6 @@ module.exports = {
         'jest/no-focused-tests': 'error',
         'jest/valid-expect': 'error',
         'no-console': 'off',
-      },
-    },
-    {
-      files: [
-        'test/**/*.js',
-        'test/**/*.ts',
-        'test/**/*.tsx',
-        'tests/**/*.js',
-        'tests/**/*.ts',
-        'tests/**/*.tsx',
-        '**/*.mocha.[jt]s',
-      ],
-      extends: ['plugin:mocha/recommended'],
-      plugins: ['mocha'],
-      env: {
-        mocha: true,
-      },
-      rules: {
-        'no-console': 'off',
-      },
-    },
-    {
-      files: [
-        '*.config.js',
-        '*.config.cjs',
-        'babel.config.js',
-        'metro.config.js',
-        'jest.config.js',
-      ],
-      env: {
-        node: true,
       },
     },
   ],
