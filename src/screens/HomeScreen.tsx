@@ -1,40 +1,227 @@
 import * as React from 'react';
-import { Button, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Modal,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+import AppButton from '../components/AppButton';
+import { colors, fontSizes, fontWeights, radii, space } from '../theme/tokens';
 import type {
   ReceiptUploadLaunchMode,
   RootStackParamList,
 } from '../navigation/RootNavigator';
 
+// ── Nav card data ────────────────────────────────────────────────────────────
+
 const destinations: Array<{
   route: keyof Omit<RootStackParamList, 'Home'>;
   testID: string;
   title: string;
+  subtitle: string;
+  icon: string;
+  primary?: boolean;
 }> = [
   {
     route: 'ReceiptUpload',
     testID: 'nav-receipt-upload',
-    title: 'Upload Receipt',
+    title: '영수증 올리기',
+    subtitle: '사진으로 포인트 적립',
+    icon: '📷',
+    primary: true,
   },
   {
     route: 'ReceiptList',
     testID: 'nav-receipt-list',
-    title: 'Receipt List',
+    title: '내 영수증',
+    subtitle: '등록된 영수증 목록',
+    icon: '📋',
   },
   {
     route: 'Survey',
     testID: 'nav-survey',
-    title: 'Survey',
+    title: '설문 참여',
+    subtitle: '답하고 포인트 획득',
+    icon: '📝',
   },
   {
     route: 'RewardResult',
     testID: 'nav-reward-result',
-    title: 'Reward Result',
+    title: '리워드 결과',
+    subtitle: '포인트 내역 확인',
+    icon: '🎁',
   },
 ];
+
+// ── BounceCard ───────────────────────────────────────────────────────────────
+
+function BounceCard({ children, onPress, style }: {
+  children: React.ReactNode;
+  onPress: () => void;
+  style?: object;
+}) {
+  const scale = React.useRef(new Animated.Value(1)).current;
+
+  return (
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() =>
+          Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, damping: 10, stiffness: 300 }).start()
+        }
+        onPressOut={() =>
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true, damping: 10, stiffness: 300 }).start()
+        }
+        style={[styles.navCard, ...(style ? [] : [])]}
+      >
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+// ── ScanGuideIllustration ────────────────────────────────────────────────────
+
+function ScanGuideIllustration() {
+  return (
+    <View style={illustrationStyles.wrapper}>
+      <View style={illustrationStyles.paper}>
+        {/* Corner markers */}
+        <View style={[illustrationStyles.corner, illustrationStyles.cornerTL]} />
+        <View style={[illustrationStyles.corner, illustrationStyles.cornerTR]} />
+        <View style={[illustrationStyles.corner, illustrationStyles.cornerBL]} />
+        <View style={[illustrationStyles.corner, illustrationStyles.cornerBR]} />
+
+        {/* Header */}
+        <View style={illustrationStyles.header}>
+          <Text style={illustrationStyles.storeName}>YG Market</Text>
+          <Text style={illustrationStyles.date}>2026/04/04</Text>
+        </View>
+        <View style={illustrationStyles.divider} />
+
+        {/* Highlight scan band */}
+        <View style={illustrationStyles.highlightBand} />
+
+        {/* Mock line items */}
+        <View style={illustrationStyles.lines}>
+          <View style={illustrationStyles.line} />
+          <View style={[illustrationStyles.line, illustrationStyles.lineShort]} />
+          <View style={[illustrationStyles.line, illustrationStyles.lineMedium]} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const illustrationStyles = StyleSheet.create({
+  corner: {
+    borderColor: colors.primary500,
+    height: 16,
+    position: 'absolute',
+    width: 16,
+  },
+  cornerBL: {
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    bottom: 10,
+    left: 10,
+  },
+  cornerBR: {
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    bottom: 10,
+    right: 10,
+  },
+  cornerTL: {
+    borderLeftWidth: 2,
+    borderTopWidth: 2,
+    left: 10,
+    top: 10,
+  },
+  cornerTR: {
+    borderRightWidth: 2,
+    borderTopWidth: 2,
+    right: 10,
+    top: 10,
+  },
+  date: {
+    color: colors.ink500,
+    fontSize: 11,
+    fontWeight: fontWeights.semibold,
+  },
+  divider: {
+    backgroundColor: colors.ink300,
+    height: 1,
+    marginTop: space.sm,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  highlightBand: {
+    backgroundColor: colors.lavender200,
+    borderRadius: 18,
+    height: 40,
+    left: 0,
+    opacity: 0.7,
+    position: 'absolute',
+    right: 0,
+    top: 56,
+  },
+  line: {
+    backgroundColor: colors.ink300,
+    borderRadius: radii.full,
+    height: 6,
+    width: '100%',
+  },
+  lineMedium: {
+    width: '72%',
+  },
+  lineShort: {
+    width: '56%',
+  },
+  lines: {
+    gap: space.md,
+    marginTop: space.xl,
+  },
+  paper: {
+    backgroundColor: '#FDFCF9',
+    borderRadius: radii.md,
+    minHeight: 148,
+    overflow: 'hidden',
+    paddingHorizontal: space.lg,
+    paddingVertical: space.lg,
+    shadowColor: colors.ink500,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 4,
+    transform: [{ rotate: '2deg' }],
+  },
+  storeName: {
+    color: colors.ink900,
+    fontSize: 12,
+    fontWeight: fontWeights.extrabold,
+  },
+  wrapper: {
+    backgroundColor: colors.lavender200,
+    borderRadius: radii.lg,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.lg,
+    marginVertical: space.lg,
+  },
+});
+
+// ── HomeScreen ───────────────────────────────────────────────────────────────
 
 function HomeScreen() {
   const navigation =
@@ -65,32 +252,64 @@ function HomeScreen() {
   }, []);
 
   return (
-    <View style={styles.container} testID="screen-home">
-      <Text style={styles.title} testID="screen-home-title">
-        Home
-      </Text>
-      <Text style={styles.description}>
-        Choose a destination to preview the current practice app flow.
-      </Text>
-      <View style={styles.buttonGroup}>
-        {destinations.map(destination => (
-          <View key={destination.route} style={styles.buttonWrapper}>
-            <Button
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        testID="screen-home"
+      >
+        {/* Hero */}
+        <View style={styles.hero}>
+          <Text style={styles.heroIcon}>🧾</Text>
+          <Text style={styles.appName} testID="screen-home-title">
+            Receipt Club
+          </Text>
+          <Text style={styles.appSubtitle}>
+            영수증을 올리고 포인트를 모아보세요
+          </Text>
+        </View>
+
+        {/* 2x2 nav grid */}
+        <View style={styles.grid}>
+          {destinations.map(dest => (
+            <BounceCard
+              key={dest.route}
               onPress={() => {
-                if (destination.route === 'ReceiptUpload') {
+                if (dest.route === 'ReceiptUpload') {
                   openUploadSheet();
                   return;
                 }
-
-                navigation.navigate(destination.route);
+                navigation.navigate(dest.route);
               }}
-              testID={destination.testID}
-              title={destination.title}
-            />
-          </View>
-        ))}
-      </View>
+              style={styles.navCardWrapper}
+            >
+              <View
+                style={[styles.navCard, dest.primary && styles.navCardPrimary]}
+              >
+                <Text style={styles.navCardIcon}>{dest.icon}</Text>
+                <Text
+                  style={[
+                    styles.navCardTitle,
+                    dest.primary && styles.navCardTitleLight,
+                  ]}
+                >
+                  {dest.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.navCardSubtitle,
+                    dest.primary && styles.navCardSubtitleLight,
+                  ]}
+                >
+                  {dest.subtitle}
+                </Text>
+              </View>
+            </BounceCard>
+          ))}
+        </View>
+      </ScrollView>
 
+      {/* ── Upload Sheet Modal ── */}
       <Modal
         animationType="slide"
         onRequestClose={() => setUploadSheetVisible(false)}
@@ -107,56 +326,58 @@ function HomeScreen() {
             style={styles.sheet}
             testID="upload-source-sheet"
           >
+            {/* Drag handle */}
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetEyebrow}>Receipt upload</Text>
-            <Text style={styles.sheetTitle}>Choose how to start</Text>
-            <Text style={styles.sheetDescription}>
-              Use the iOS document scanner first, or bring in a receipt you
-              already saved.
-            </Text>
+
+            <Text style={styles.sheetEyebrow}>영수증 업로드</Text>
+            <Text style={styles.sheetTitle}>어떻게 시작할까요?</Text>
+
             <View style={styles.sourceList}>
+              {/* Gallery option */}
               <View style={styles.sourceRow}>
-                <View style={styles.sourceCopyGroup}>
-                  <View style={[styles.sourceBadge, styles.galleryBadge]} />
-                  <View style={styles.sourceTextGroup}>
-                    <Text style={styles.sourceTitle}>Saved receipt photo</Text>
-                    <Text style={styles.sourceDescription}>
-                      Import a receipt image from the photo library.
-                    </Text>
-                  </View>
+                <View style={styles.sourceBadge}>
+                  <Text style={styles.sourceBadgeIcon}>🖼️</Text>
                 </View>
-                <Pressable
+                <View style={styles.sourceTextGroup}>
+                  <Text style={styles.sourceTitle}>저장된 영수증 사진</Text>
+                  <Text style={styles.sourceDescription}>
+                    사진 라이브러리에서 영수증 이미지를 가져오세요.
+                  </Text>
+                </View>
+                <AppButton
                   onPress={() => navigateToUpload('library')}
-                  style={[styles.sourceAction, styles.primaryButton]}
+                  size="sm"
                   testID="upload-source-library"
-                >
-                  <Text style={styles.primaryButtonText}>Gallery</Text>
-                </Pressable>
+                  title="갤러리"
+                  variant="secondary"
+                />
               </View>
 
-              <View style={styles.sourceRow}>
-                <View style={styles.sourceCopyGroup}>
-                  <View style={[styles.sourceBadge, styles.cameraBadge]} />
-                  <View style={styles.sourceTextGroup}>
-                    <Text style={styles.sourceTitle}>Scan with camera</Text>
-                    <Text style={styles.sourceDescription}>
-                      Open VisionKit and review pages before upload.
-                    </Text>
-                  </View>
+              {/* Camera option */}
+              <View style={[styles.sourceRow, styles.sourceRowHighlighted]}>
+                <View style={styles.sourceBadge}>
+                  <Text style={styles.sourceBadgeIcon}>📷</Text>
                 </View>
-                <Pressable
+                <View style={styles.sourceTextGroup}>
+                  <Text style={styles.sourceTitle}>카메라로 스캔</Text>
+                  <Text style={styles.sourceDescription}>
+                    VisionKit으로 영수증을 스캔하고 업로드하세요.
+                  </Text>
+                </View>
+                <AppButton
                   onPress={openScannerGuide}
-                  style={[styles.sourceAction, styles.primaryButton]}
+                  size="sm"
                   testID="upload-source-camera"
-                >
-                  <Text style={styles.primaryButtonText}>Camera</Text>
-                </Pressable>
+                  title="카메라"
+                  variant="primary"
+                />
               </View>
             </View>
           </Pressable>
         </Pressable>
       </Modal>
 
+      {/* ── Scanner Guide Modal ── */}
       <Modal
         animationType="fade"
         onRequestClose={() => setScannerGuideVisible(false)}
@@ -165,316 +386,244 @@ function HomeScreen() {
       >
         <View style={styles.guideOverlay} testID="scanner-guide-overlay">
           <View style={styles.guideCard} testID="scanner-guide-modal">
+            {/* Close button */}
             <Pressable
               accessibilityRole="button"
               onPress={() => setScannerGuideVisible(false)}
               style={styles.closeButton}
               testID="scanner-guide-close"
             >
-              <Text style={styles.closeButtonLabel}>x</Text>
+              <Text style={styles.closeButtonLabel}>✕</Text>
             </Pressable>
-            <Text style={styles.guideTitle}>Scan the receipt clearly</Text>
+
+            <Text style={styles.guideTitle}>영수증을 명확하게 스캔하세요</Text>
             <Text style={styles.guideDescription}>
-              Capture one receipt per shot. You can review, crop, rotate, and
-              retake pages in the system scanner before upload.
+              한 장씩 촬영하고, 스캔 전에 페이지를 검토·자르기·회전할 수 있어요.
             </Text>
-            <View style={styles.guidePreview}>
-              <View style={styles.guidePreviewFrame}>
-                <View style={styles.guideReceiptPaper}>
-                  <View style={styles.guideReceiptHeader}>
-                    <Text style={styles.guideReceiptStore}>YG Market</Text>
-                    <Text style={styles.guideReceiptDate}>2026/04/04</Text>
-                  </View>
-                  <View style={styles.guideReceiptDivider} />
-                  <View style={styles.guideReceiptHighlightBand} />
-                  <View style={styles.guideReceiptLineGroup}>
-                    <View style={styles.guideReceiptLine} />
-                    <View
-                      style={[
-                        styles.guideReceiptLine,
-                        styles.guideReceiptLineShort,
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.guideReceiptLine,
-                        styles.guideReceiptLineMedium,
-                      ]}
-                    />
-                  </View>
-                </View>
-              </View>
-            </View>
+
+            <ScanGuideIllustration />
+
             <Text style={styles.guideFootnote}>
-              Overseas receipts are excluded in this prototype flow.
+              해외 영수증은 현재 프로토타입에서 제외됩니다.
             </Text>
-            <Pressable
+
+            <AppButton
               onPress={() => navigateToUpload('camera')}
-              style={[styles.ctaButton, styles.primaryButton]}
+              size="lg"
               testID="scanner-guide-start"
-            >
-              <Text style={styles.primaryButtonText}>Start scan</Text>
-            </Pressable>
+              title="스캔 시작"
+              variant="primary"
+            />
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  buttonGroup: {
-    gap: 12,
+  appName: {
+    color: colors.ink900,
+    fontSize: fontSizes['3xl'],
+    fontWeight: fontWeights.extrabold,
+    marginTop: space.sm,
+    textAlign: 'center',
   },
-  buttonWrapper: {
-    width: '100%',
+  appSubtitle: {
+    color: colors.ink500,
+    fontSize: fontSizes.md,
+    marginTop: space.xs,
+    textAlign: 'center',
   },
   closeButton: {
     alignItems: 'center',
     alignSelf: 'flex-end',
-    height: 32,
+    backgroundColor: colors.ink100,
+    borderRadius: radii.full,
+    height: 36,
     justifyContent: 'center',
-    width: 32,
+    width: 36,
   },
   closeButtonLabel: {
-    color: '#6b7280',
-    fontSize: 20,
-    fontWeight: '600',
-    lineHeight: 20,
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  description: {
-    color: '#4b5563',
+    color: colors.ink500,
     fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 24,
-    textAlign: 'center',
+    fontWeight: fontWeights.semibold,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: space.md,
+    marginTop: space.xl,
   },
   guideCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 28,
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
     maxWidth: 360,
-    padding: 24,
+    padding: space.xl,
     width: '100%',
   },
   guideDescription: {
-    color: '#6b7280',
-    fontSize: 15,
+    color: colors.ink500,
+    fontSize: fontSizes.sm,
     lineHeight: 22,
-    marginTop: 10,
+    marginTop: space.sm,
     textAlign: 'center',
   },
   guideFootnote: {
-    color: '#6b7280',
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 20,
+    color: colors.ink500,
+    fontSize: fontSizes.xs,
+    lineHeight: 18,
+    marginBottom: space.lg,
     textAlign: 'center',
   },
   guideOverlay: {
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
-  },
-  guidePreview: {
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 18,
-  },
-  guidePreviewFrame: {
-    backgroundColor: '#eef2ff',
-    borderRadius: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    width: '100%',
-  },
-  guideReceiptDate: {
-    color: '#4b5563',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  guideReceiptDivider: {
-    backgroundColor: '#d1d5db',
-    height: 1,
-    marginTop: 10,
-  },
-  guideReceiptHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  guideReceiptHighlightBand: {
-    backgroundColor: 'rgba(168, 85, 247, 0.3)',
-    borderRadius: 18,
-    height: 44,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 18,
-  },
-  guideReceiptLine: {
-    backgroundColor: '#9ca3af',
-    borderRadius: 999,
-    height: 6,
-    width: '100%',
-  },
-  guideReceiptLineGroup: {
-    gap: 12,
-    marginTop: 22,
-    position: 'relative',
-  },
-  guideReceiptLineMedium: {
-    width: '72%',
-  },
-  guideReceiptLineShort: {
-    width: '56%',
-  },
-  guideReceiptPaper: {
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
-    minHeight: 148,
-    overflow: 'hidden',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    shadowColor: '#cbd5e1',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
-  },
-  guideReceiptStore: {
-    color: '#111827',
-    fontSize: 12,
-    fontWeight: '700',
+    padding: space.xl,
   },
   guideTitle: {
-    color: '#111827',
-    fontSize: 30,
-    fontWeight: '800',
-    lineHeight: 38,
-    marginTop: 8,
+    color: colors.ink900,
+    fontSize: fontSizes['2xl'],
+    fontWeight: fontWeights.extrabold,
+    marginTop: space.sm,
     textAlign: 'center',
   },
-  primaryButton: {
-    backgroundColor: '#8b1cf7',
-  },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  cameraBadge: {
-    backgroundColor: '#e0f2fe',
-  },
-  ctaButton: {
+  hero: {
     alignItems: 'center',
-    borderRadius: 18,
-    justifyContent: 'center',
-    minHeight: 56,
-    paddingHorizontal: 16,
-    width: '100%',
+    paddingVertical: space['2xl'],
   },
-  galleryBadge: {
-    backgroundColor: '#ede9fe',
+  heroIcon: {
+    fontSize: 56,
+  },
+  navCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    minHeight: 140,
+    padding: space.lg,
+    shadowColor: colors.ink500,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  navCardIcon: {
+    fontSize: 36,
+    marginBottom: space.sm,
+  },
+  navCardPrimary: {
+    backgroundColor: colors.primary500,
+  },
+  navCardSubtitle: {
+    color: colors.ink500,
+    fontSize: fontSizes.xs,
+    lineHeight: 18,
+    marginTop: space.xs,
+  },
+  navCardSubtitleLight: {
+    color: 'rgba(255,255,255,0.75)',
+  },
+  navCardTitle: {
+    color: colors.ink900,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+  },
+  navCardTitleLight: {
+    color: colors.surface,
+  },
+  navCardWrapper: {
+    width: '47.5%',
+  },
+  safe: {
+    backgroundColor: colors.canvas,
+    flex: 1,
+  },
+  scroll: {
+    paddingHorizontal: space.xl,
+    paddingBottom: space['3xl'],
   },
   sheet: {
-    backgroundColor: '#ffffff',
-    borderRadius: 28,
-    padding: 24,
+    backgroundColor: colors.surface,
+    borderRadius: radii.xl,
+    padding: space.xl,
   },
   sheetDescription: {
-    color: '#6b7280',
-    fontSize: 15,
+    color: colors.ink500,
+    fontSize: fontSizes.sm,
     lineHeight: 22,
-    marginTop: 8,
+    marginTop: space.sm,
   },
   sheetEyebrow: {
-    color: '#8b5cf6',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.4,
+    color: colors.primary500,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   sheetHandle: {
     alignSelf: 'center',
-    backgroundColor: '#d1d5db',
-    borderRadius: 999,
+    backgroundColor: colors.ink300,
+    borderRadius: radii.full,
     height: 5,
-    marginBottom: 18,
+    marginBottom: space.lg,
     width: 52,
   },
   sheetOverlay: {
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     flex: 1,
     justifyContent: 'flex-end',
-    padding: 20,
+    padding: space.xl,
   },
   sheetTitle: {
-    color: '#111827',
-    fontSize: 24,
-    fontWeight: '800',
-    marginTop: 8,
-  },
-  sourceAction: {
-    alignItems: 'center',
-    borderRadius: 999,
-    justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 104,
-    paddingHorizontal: 18,
+    color: colors.ink900,
+    fontSize: fontSizes['2xl'],
+    fontWeight: fontWeights.extrabold,
+    marginTop: space.sm,
   },
   sourceBadge: {
-    borderRadius: 14,
-    height: 42,
-    width: 42,
-  },
-  sourceCopyGroup: {
     alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 12,
-    marginRight: 12,
+    backgroundColor: colors.surfaceSubtle,
+    borderRadius: radii.sm,
+    height: 44,
+    justifyContent: 'center',
+    marginRight: space.md,
+    width: 44,
+  },
+  sourceBadgeIcon: {
+    fontSize: 22,
   },
   sourceDescription: {
-    color: '#6b7280',
-    fontSize: 13,
+    color: colors.ink500,
+    fontSize: fontSizes.xs,
     lineHeight: 18,
-    marginTop: 4,
+    marginTop: 3,
   },
   sourceList: {
-    gap: 12,
-    marginTop: 24,
+    gap: space.md,
+    marginTop: space.xl,
   },
   sourceRow: {
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    borderRadius: 22,
+    backgroundColor: colors.ink100,
+    borderRadius: radii.md,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.lg,
+  },
+  sourceRowHighlighted: {
+    backgroundColor: colors.primary50,
+    borderColor: colors.primary200,
+    borderWidth: 1,
   },
   sourceTextGroup: {
     flex: 1,
+    marginRight: space.sm,
   },
   sourceTitle: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'center',
+    color: colors.ink900,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
   },
 });
 

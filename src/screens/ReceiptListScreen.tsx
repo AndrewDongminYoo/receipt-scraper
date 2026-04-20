@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {
-  Button,
+  Animated,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -8,13 +8,17 @@ import {
   View,
 } from 'react-native';
 
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 
 import { fetchReceipts, receiptQueryKeys } from '../api/receipts';
-import ScreenHeader from '../components/ScreenHeader';
+import AppButton from '../components/AppButton';
+import ReceiptCard from '../components/ReceiptCard';
 import StateCard from '../components/StateCard';
+import { colors, fontSizes, fontWeights, radii, space } from '../theme/tokens';
+import type { RootStackParamList } from '../navigation/RootNavigator';
 import type { ReceiptItem } from '../types/receipt';
-import { formatTimestamp } from '../utils/formatTimestamp';
 
 function getReceiptsErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -24,113 +28,186 @@ function getReceiptsErrorMessage(error: unknown) {
   return 'Unable to load receipts right now.';
 }
 
-function renderReceiptItem({ item }: { item: ReceiptItem }) {
+/** Shimmering skeleton card for loading state */
+function SkeletonCard() {
+  const opacity = React.useRef(new Animated.Value(0.4)).current;
+
+  React.useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [opacity]);
+
   return (
-    <View style={styles.receiptCard} testID={`receipt-list-item-${item.id}`}>
-      <Text style={styles.receiptFileName}>
-        {item.fileName || 'Unnamed receipt'}
-      </Text>
-      <Text style={styles.receiptMeta}>{item.storeName}</Text>
-      <Text style={styles.receiptMeta}>Status: {item.status}</Text>
-      <Text style={styles.receiptMeta}>
-        Uploaded: {formatTimestamp(item.purchasedAt)}
-      </Text>
+    <Animated.View style={[skeletonStyles.card, { opacity }]}>
+      <View style={skeletonStyles.header} />
+      <View style={skeletonStyles.line} />
+      <View style={[skeletonStyles.line, skeletonStyles.lineShort]} />
+    </Animated.View>
+  );
+}
 
-      {item.extractedMetadata ? (
-        <View style={styles.metadataSection}>
-          <Text style={styles.sectionLabel}>Extracted metadata</Text>
-          {item.extractedMetadata.totalAmount ? (
-            <Text style={styles.receiptMeta}>
-              Total: {item.extractedMetadata.totalAmount}
-            </Text>
-          ) : null}
-          {item.extractedMetadata.vatAmount ? (
-            <Text style={styles.receiptMeta}>
-              VAT: {item.extractedMetadata.vatAmount}
-            </Text>
-          ) : null}
-          {item.extractedMetadata.paymentMethod ? (
-            <Text style={styles.receiptMeta}>
-              Payment: {item.extractedMetadata.paymentMethod}
-            </Text>
-          ) : null}
+const skeletonStyles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    gap: space.sm,
+    height: 88,
+    padding: space.lg,
+  },
+  header: {
+    backgroundColor: colors.ink300,
+    borderRadius: radii.sm,
+    height: 16,
+    width: '60%',
+  },
+  line: {
+    backgroundColor: colors.ink100,
+    borderRadius: radii.sm,
+    height: 12,
+    width: '100%',
+  },
+  lineShort: {
+    width: '40%',
+  },
+});
 
-          {item.extractedMetadata.lineItems.map((lineItem, index) => (
-            <Text
-              key={`${item.id}-line-item-${index}`}
-              style={styles.receiptMeta}
-              testID={`receipt-line-item-${item.id}-${index}`}
-            >
-              {`${lineItem.name} · Qty ${lineItem.quantity || '?'} · Unit ${
-                lineItem.unitPrice || '?'
-              } · Amount ${lineItem.amount || '?'}`}
-            </Text>
-          ))}
-        </View>
-      ) : null}
-
-      {item.ocrText ? (
-        <View style={styles.metadataSection}>
-          <Text style={styles.sectionLabel}>Extracted text</Text>
-          <Text style={styles.ocrText}>{item.ocrText}</Text>
-        </View>
-      ) : null}
+/** Empty state illustration — three overlapping receipt-like cards */
+function EmptyIllustration() {
+  return (
+    <View style={emptyStyles.stack}>
+      <View style={[emptyStyles.card, emptyStyles.cardBack2]} />
+      <View style={[emptyStyles.card, emptyStyles.cardBack1]} />
+      <View style={[emptyStyles.card, emptyStyles.cardFront]}>
+        <Text style={emptyStyles.questionMark}>?</Text>
+      </View>
     </View>
   );
 }
 
+const emptyStyles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderColor: colors.ink300,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    height: 88,
+    width: 160,
+  },
+  cardBack1: {
+    position: 'absolute',
+    transform: [{ rotate: '-6deg' }, { translateY: 4 }],
+  },
+  cardBack2: {
+    position: 'absolute',
+    transform: [{ rotate: '6deg' }, { translateY: 4 }],
+  },
+  cardFront: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  questionMark: {
+    color: colors.ink300,
+    fontSize: 36,
+    fontWeight: fontWeights.extrabold,
+  },
+  stack: {
+    alignItems: 'center',
+    height: 100,
+    justifyContent: 'center',
+    marginBottom: space.xl,
+    position: 'relative',
+    width: 180,
+  },
+});
+
+function renderReceiptItem({ item }: { item: ReceiptItem }) {
+  return (
+    <ReceiptCard
+      item={item}
+      testID={`receipt-list-item-${item.id}`}
+    />
+  );
+}
+
 function ReceiptListScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { data, error, isError, isFetching, isLoading, refetch } = useQuery({
     queryFn: fetchReceipts,
     queryKey: receiptQueryKeys.all,
   });
 
   const isRefreshing = isFetching && !isLoading;
-
   const receipts = data ?? [];
 
   return (
     <View style={styles.container} testID="screen-receipt-list">
-      <ScreenHeader
-        description="Review the receipts currently stored in the mock server-state list."
-        title="Receipt List"
-        titleTestID="screen-receipt-list-title"
-      />
+      {/* Header row */}
+      <View style={styles.headerRow}>
+        <Text style={styles.title} testID="screen-receipt-list-title">
+          내 영수증 📋
+        </Text>
+        {receipts.length > 0 ? (
+          <View style={styles.countBadge}>
+            <Text style={styles.countBadgeText}>{receipts.length}장</Text>
+          </View>
+        ) : null}
+      </View>
 
+      {/* Loading skeletons */}
       {isLoading ? (
-        <StateCard
-          message="Loading receipts..."
-          showsActivityIndicator
-          testID="receipt-list-loading"
-          title="Loading receipts"
-        />
+        <View style={styles.skeletonList}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </View>
       ) : null}
 
+      {/* Error */}
       {!isLoading && isError ? (
         <StateCard
           message={getReceiptsErrorMessage(error)}
           testID="receipt-list-error"
-          title="Unable to load receipts"
+          title="영수증을 불러올 수 없어요"
           variant="error"
         >
-          <View style={styles.retryButtonWrapper}>
-            <Button
-              onPress={() => refetch()}
-              testID="retry-receipts-button"
-              title="Try Again"
-            />
-          </View>
+          <AppButton
+            onPress={() => refetch()}
+            size="md"
+            testID="retry-receipts-button"
+            title="다시 시도"
+            variant="secondary"
+          />
         </StateCard>
       ) : null}
 
+      {/* Empty state */}
       {!isLoading && !isError && receipts.length === 0 ? (
-        <StateCard
-          message="Upload one from the receipt flow to populate this list."
-          testID="receipt-list-empty"
-          title="No receipts uploaded yet."
-        />
+        <View style={styles.emptyContainer}>
+          <EmptyIllustration />
+          <Text style={styles.emptyTitle}>아직 영수증이 없어요</Text>
+          <Text style={styles.emptyDescription}>
+            첫 영수증을 올리고 포인트를 받아보세요
+          </Text>
+          <AppButton
+            onPress={() =>
+              navigation.navigate('ReceiptUpload', { autoStart: false })
+            }
+            size="lg"
+            testID="receipt-list-empty"
+            title="영수증 올리기"
+            variant="primary"
+          />
+        </View>
       ) : null}
 
+      {/* Receipt list */}
       {!isLoading && !isError && receipts.length > 0 ? (
         <FlatList
           contentContainerStyle={styles.listContent}
@@ -140,6 +217,7 @@ function ReceiptListScreen() {
             <RefreshControl
               onRefresh={refetch}
               refreshing={isRefreshing}
+              tintColor={colors.primary500}
               testID="receipt-list-refresh-control"
             />
           }
@@ -153,53 +231,59 @@ function ReceiptListScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: colors.canvas,
     flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: space.xl,
+    paddingTop: space.xl,
+  },
+  countBadge: {
+    backgroundColor: colors.lavender200,
+    borderRadius: radii.full,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+  },
+  countBadgeText: {
+    color: colors.lavender700,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: space.xl,
+    paddingVertical: space['2xl'],
+  },
+  emptyDescription: {
+    color: colors.ink500,
+    fontSize: fontSizes.sm,
+    marginBottom: space.xl,
+    textAlign: 'center',
+  },
+  emptyTitle: {
+    color: colors.ink700,
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.bold,
+    marginBottom: space.sm,
+    textAlign: 'center',
+  },
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: space.lg,
   },
   listContent: {
-    gap: 12,
-    paddingBottom: 24,
+    gap: space.md,
+    paddingBottom: space['2xl'],
   },
-  receiptCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
+  skeletonList: {
+    gap: space.md,
   },
-  receiptFileName: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  receiptMeta: {
-    color: '#4b5563',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  metadataSection: {
-    borderTopColor: '#e5e7eb',
-    borderTopWidth: 1,
-    marginTop: 12,
-    paddingTop: 12,
-  },
-  ocrText: {
-    color: '#374151',
-    fontFamily: 'Courier',
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  retryButtonWrapper: {
-    width: '100%',
-  },
-  sectionLabel: {
-    color: '#111827',
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 6,
+  title: {
+    color: colors.ink900,
+    fontSize: fontSizes['2xl'],
+    fontWeight: fontWeights.extrabold,
   },
 });
 

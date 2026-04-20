@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { colors, fontSizes, fontWeights, space } from '../theme/tokens';
+
 interface ScreenHeaderProps {
   description: string;
   title: string;
@@ -20,19 +22,19 @@ function ScreenHeader({ description, title, titleTestID }: ScreenHeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: space.xl,
   },
   description: {
-    color: '#4b5563',
-    fontSize: 16,
-    lineHeight: 22,
-    textAlign: 'left',
+    color: colors.ink500,
+    fontSize: fontSizes.md,
+    lineHeight: 24,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'left',
+    color: colors.ink900,
+    fontSize: fontSizes['2xl'],
+    fontWeight: fontWeights.extrabold,
+    lineHeight: 36,
+    marginBottom: space.sm,
   },
 });
 
