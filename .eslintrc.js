@@ -100,6 +100,7 @@ module.exports = {
       'error',
       {
         groups: [
+          ['^(?:\\u0000)?.+\\.(css|scss|sass|less|stylus)(?:\\?.*)?$'],
           // React / RN
           ['^react$', '^react-native$'],
           // Third-party packages
