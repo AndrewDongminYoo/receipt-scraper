@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {
-  Button,
   Image,
   NativeModules,
   Platform,
@@ -31,6 +30,7 @@ import {
   uploadReceipt,
   type UploadReceiptParams,
 } from '../api/receipts';
+import AppButton from '../components/AppButton';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
@@ -345,6 +345,7 @@ function ReceiptUploadScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.contentContainer}
+      style={styles.scrollView}
       testID="screen-receipt-upload"
     >
       <ScreenHeader
@@ -353,37 +354,41 @@ function ReceiptUploadScreen() {
         titleTestID="screen-receipt-upload-title"
       />
 
+      {/* Step 1 — Capture */}
       <SectionCard
         description="The image is captured via the device camera and verified with on-device OCR before upload."
         title="1. Capture a receipt"
       >
         <View style={styles.buttonGroup}>
-          <View style={styles.buttonWrapper}>
-            <Button
-              disabled={isUploading}
-              onPress={() => {
-                handleCaptureReceipt().then(() => undefined);
-              }}
-              testID="pick-receipt-button"
-              title="Capture Receipt"
-            />
-          </View>
+          <AppButton
+            disabled={isUploading}
+            onPress={() => {
+              handleCaptureReceipt().then(() => undefined);
+            }}
+            size="lg"
+            testID="pick-receipt-button"
+            variant="primary"
+          >
+            Capture Receipt
+          </AppButton>
           {__DEV__ ? (
-            <View style={styles.buttonWrapper}>
-              <Button
-                title={`[DEV] Picker: ${useLibraryPicker ? 'Library' : 'Camera'}`}
-                onPress={async () => {
-                  const next = !useLibraryPicker;
-                  await setUseLibraryPicker(next);
-                  setUseLibraryPickerState(next);
-                }}
-                testID="dev-flag-toggle"
-              />
-            </View>
+            <AppButton
+              onPress={async () => {
+                const next = !useLibraryPicker;
+                await setUseLibraryPicker(next);
+                setUseLibraryPickerState(next);
+              }}
+              size="sm"
+              testID="dev-flag-toggle"
+              variant="ghost"
+            >
+              {`[DEV] Picker: ${useLibraryPicker ? 'Library' : 'Camera'}`}
+            </AppButton>
           ) : null}
         </View>
       </SectionCard>
 
+      {/* Step 2 — Preview */}
       <SectionCard title="2. Preview the selected file">
         {selectedAsset?.uri ? (
           <>
@@ -402,6 +407,7 @@ function ReceiptUploadScreen() {
           </>
         ) : (
           <View style={styles.emptyPreview} testID="receipt-preview-empty">
+            <Text style={styles.emptyPreviewIcon}>🧾</Text>
             <Text style={styles.emptyPreviewText}>
               No receipt captured yet.
             </Text>
@@ -409,83 +415,87 @@ function ReceiptUploadScreen() {
         )}
       </SectionCard>
 
+      {/* Step 3 — Upload */}
       <SectionCard
         description="Toggle mock failure when you want to exercise retry handling without a real backend."
         title="3. Trigger the upload request"
       >
         <View style={styles.buttonGroup}>
-          <View style={styles.buttonWrapper}>
-            <Button
-              disabled={!selectedAsset || !ocrText || isUploading}
-              onPress={() =>
-                setSimulateFailure(previousState => !previousState)
-              }
-              testID="simulate-failure-toggle"
-              title={`Simulate Failure: ${simulateFailure ? 'On' : 'Off'}`}
-            />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button
-              disabled={!selectedAsset || !ocrText || isUploading}
-              onPress={() => handleUpload()}
-              testID="upload-receipt-button"
-              title={isUploading ? 'Uploading...' : 'Upload Receipt'}
-            />
-          </View>
+          <AppButton
+            disabled={!selectedAsset || !ocrText || isUploading}
+            onPress={() => setSimulateFailure(prev => !prev)}
+            size="sm"
+            testID="simulate-failure-toggle"
+            variant="ghost"
+          >
+            {`Simulate Failure: ${simulateFailure ? 'On' : 'Off'}`}
+          </AppButton>
+          <AppButton
+            disabled={!selectedAsset || !ocrText || isUploading}
+            isLoading={isUploading}
+            onPress={() => handleUpload()}
+            size="lg"
+            testID="upload-receipt-button"
+            variant="primary"
+          >
+            {isUploading ? 'Uploading...' : 'Upload Receipt'}
+          </AppButton>
           {uploadMutation.isError ? (
-            <View style={styles.buttonWrapper}>
-              <Button
-                disabled={!selectedAsset || !ocrText || isUploading}
-                onPress={() => handleUpload(false)}
-                testID="retry-upload-button"
-                title="Retry Upload"
-              />
-            </View>
+            <AppButton
+              disabled={!selectedAsset || !ocrText || isUploading}
+              onPress={() => handleUpload(false)}
+              testID="retry-upload-button"
+              variant="ghost"
+            >
+              Retry Upload
+            </AppButton>
           ) : null}
         </View>
       </SectionCard>
 
+      {/* Capture failure cards */}
       {captureFailure === 'ocr_failed' ? (
         <StateCard
-          variant="error"
-          title="Couldn't read the receipt"
           message="We couldn't read the receipt. Try again in better lighting."
           testID="receipt-capture-failure-ocr"
+          title="Couldn't read the receipt"
+          variant="error"
         />
       ) : null}
       {captureFailure === 'wrong_type' ? (
         <StateCard
-          variant="error"
-          title="Wrong receipt type"
           message="Only grocery and supermarket receipts are accepted."
           testID="receipt-capture-failure-wrong-type"
+          title="Wrong receipt type"
+          variant="error"
         />
       ) : null}
       {captureFailure === 'refund' ? (
         <StateCard
-          variant="error"
-          title="Refund receipt not accepted"
           message="Refund and cancellation receipts are not eligible for points."
           testID="receipt-capture-failure-refund"
+          title="Refund receipt not accepted"
+          variant="error"
         />
       ) : null}
       {captureFailure === 'duplicate' ? (
         <StateCard
-          variant="error"
-          title="Duplicate receipt"
           message="This receipt has already been submitted."
           testID="receipt-capture-failure-duplicate"
+          title="Duplicate receipt"
+          variant="error"
         />
       ) : null}
       {captureFailure === 'cancelled' ? (
         <StateCard
-          variant="error"
-          title="Camera unavailable"
           message="Unable to access the camera. Check your permissions and try again."
           testID="receipt-capture-failure-cancelled"
+          title="Camera unavailable"
+          variant="error"
         />
       ) : null}
 
+      {/* Upload status */}
       <StateCard
         message={displayMessage}
         showsActivityIndicator={isUploading}
@@ -505,44 +515,52 @@ function ReceiptUploadScreen() {
 
 const styles = StyleSheet.create({
   buttonGroup: {
-    gap: 12,
-  },
-  buttonWrapper: {
-    width: '100%',
+    gap: 10,
   },
   contentContainer: {
     padding: 24,
   },
   emptyPreview: {
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 16,
+    backgroundColor: 'rgba(28, 28, 28, 0.03)',
+    borderColor: '#eceae4',
+    borderRadius: 12,
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
     justifyContent: 'center',
     minHeight: 220,
     padding: 24,
   },
+  emptyPreviewIcon: {
+    fontSize: 40,
+    marginBottom: 8,
+    opacity: 0.4,
+  },
   emptyPreviewText: {
-    color: '#6b7280',
+    color: '#5f5f5d',
     fontSize: 15,
     textAlign: 'center',
   },
   fileName: {
-    color: '#111827',
-    fontSize: 16,
+    color: '#1c1c1c',
+    fontSize: 15,
     fontWeight: '600',
     marginTop: 12,
   },
   metadata: {
-    color: '#4b5563',
-    fontSize: 16,
-    lineHeight: 22,
-    marginTop: 6,
+    color: '#5f5f5d',
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
   },
   previewImage: {
-    backgroundColor: '#e5e7eb',
-    borderRadius: 16,
+    backgroundColor: '#eceae4',
+    borderRadius: 12,
     height: 220,
     width: '100%',
+  },
+  scrollView: {
+    backgroundColor: '#f7f4ed',
   },
 });
 

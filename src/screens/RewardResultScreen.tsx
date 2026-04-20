@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 
 import { fetchLatestRewardResult, rewardResultQueryKeys } from '../api/rewards';
+import AppButton from '../components/AppButton';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
@@ -39,10 +40,11 @@ function RewardResultScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.contentContainer}
+      style={styles.scrollView}
       testID="screen-reward-result"
     >
       <ScreenHeader
-        description="Review the latest reward outcome generated from the Day 4 survey flow."
+        description="Review the latest reward outcome generated from the survey flow."
         title="Reward Result"
         titleTestID="screen-reward-result-title"
       />
@@ -62,13 +64,13 @@ function RewardResultScreen() {
           title="Unable to load reward"
           variant="error"
         >
-          <View style={styles.buttonWrapper}>
-            <Button
-              onPress={() => refetch()}
-              testID="retry-reward-result-button"
-              title="Try Again"
-            />
-          </View>
+          <AppButton
+            onPress={() => refetch()}
+            testID="retry-reward-result-button"
+            variant="ghost"
+          >
+            Try Again
+          </AppButton>
         </StateCard>
       ) : null}
 
@@ -77,19 +79,21 @@ function RewardResultScreen() {
           message="Complete the survey to calculate your reward."
           title="No reward yet"
         >
-          <View style={styles.buttonWrapper}>
-            <Button
-              onPress={() => navigation.navigate('Survey')}
-              testID="reward-empty-go-to-survey"
-              title="Go To Survey"
-            />
-          </View>
+          <AppButton
+            onPress={() => navigation.navigate('Survey')}
+            testID="reward-empty-go-to-survey"
+            variant="primary"
+          >
+            Go To Survey
+          </AppButton>
         </StateCard>
       ) : null}
 
       {!isLoading && !isError && rewardResult ? (
         <>
+          {/* Success celebration card */}
           <View style={styles.resultCard}>
+            <Text style={styles.resultStar}>⭐</Text>
             <Text style={styles.resultTitle}>{rewardResult.title}</Text>
             <Text style={styles.resultPoints}>
               {rewardResult.pointsAwarded} points
@@ -100,7 +104,8 @@ function RewardResultScreen() {
             </Text>
           </View>
 
-          <SectionCard title="Survey summary" style={styles.answersCard}>
+          {/* Survey summary */}
+          <SectionCard style={styles.answersCard} title="Survey summary">
             {(Object.keys(surveyFieldLabels) as Array<SurveyFieldName>).map(
               fieldName => (
                 <View key={fieldName} style={styles.answerRow}>
@@ -118,20 +123,20 @@ function RewardResultScreen() {
           </SectionCard>
 
           <View style={styles.actionGroup}>
-            <View style={styles.buttonWrapper}>
-              <Button
-                onPress={() => navigation.navigate('Survey')}
-                testID="reward-retake-survey-button"
-                title="Retake Survey"
-              />
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button
-                onPress={() => navigation.navigate('Home')}
-                testID="reward-go-home-button"
-                title="Back To Home"
-              />
-            </View>
+            <AppButton
+              onPress={() => navigation.navigate('Survey')}
+              testID="reward-retake-survey-button"
+              variant="ghost"
+            >
+              Retake Survey
+            </AppButton>
+            <AppButton
+              onPress={() => navigation.navigate('Home')}
+              testID="reward-go-home-button"
+              variant="surface"
+            >
+              Back To Home
+            </AppButton>
           </View>
         </>
       ) : null}
@@ -141,63 +146,71 @@ function RewardResultScreen() {
 
 const styles = StyleSheet.create({
   actionGroup: {
-    gap: 12,
+    gap: 10,
   },
   answerLabel: {
-    color: '#4b5563',
+    color: '#5f5f5d',
     fontSize: 14,
     lineHeight: 20,
   },
   answerRow: {
-    borderTopColor: '#e5e7eb',
+    borderTopColor: '#eceae4',
     borderTopWidth: 1,
-    gap: 6,
+    gap: 4,
     paddingVertical: 12,
   },
   answerValue: {
-    color: '#111827',
-    fontSize: 16,
+    color: '#1c1c1c',
+    fontSize: 15,
     fontWeight: '600',
   },
   answersCard: {
     paddingBottom: 8,
   },
-  buttonWrapper: {
-    width: '100%',
-  },
   contentContainer: {
     padding: 24,
   },
   resultCard: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#86efac',
-    borderRadius: 16,
+    backgroundColor: '#fcfbf8',
+    borderColor: '#eceae4',
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 16,
     padding: 20,
   },
   resultMessage: {
-    color: '#14532d',
+    color: '#5f5f5d',
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 12,
   },
   resultPoints: {
-    color: '#166534',
-    fontSize: 24,
+    color: '#92400e',
+    fontSize: 26,
     fontWeight: '700',
+    letterSpacing: -0.5,
     marginBottom: 10,
   },
+  resultStar: {
+    fontSize: 40,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
   resultTimestamp: {
-    color: '#15803d',
+    color: 'rgba(28, 28, 28, 0.4)',
     fontSize: 13,
     lineHeight: 18,
   },
   resultTitle: {
-    color: '#14532d',
+    color: '#1c1c1c',
     fontSize: 22,
     fontWeight: '700',
+    letterSpacing: -0.4,
     marginBottom: 8,
+    textAlign: 'center',
+  },
+  scrollView: {
+    backgroundColor: '#f7f4ed',
   },
 });
 

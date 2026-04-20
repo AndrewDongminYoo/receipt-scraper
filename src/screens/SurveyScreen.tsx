@@ -1,12 +1,5 @@
 import * as React from 'react';
-import {
-  Button,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
 
 import { rewardResultQueryKeys, submitSurvey } from '../api/rewards';
+import AppButton from '../components/AppButton';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
@@ -80,10 +74,11 @@ function SurveyScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.contentContainer}
+      style={styles.scrollView}
       testID="screen-survey"
     >
       <ScreenHeader
-        description="Answer three quick multiple-choice questions, validate the inputs, and submit the final Day 4 reward flow."
+        description="Answer three quick multiple-choice questions and earn your reward."
         title="Survey"
         titleTestID="screen-survey-title"
       />
@@ -118,6 +113,9 @@ function SurveyScreen() {
                         ]}
                         testID={`survey-option-${fieldName}-${option.value}`}
                       >
+                        {isSelected ? (
+                          <Text style={styles.checkMark}>✓</Text>
+                        ) : null}
                         <Text
                           style={[
                             styles.optionButtonLabel,
@@ -163,54 +161,70 @@ function SurveyScreen() {
         />
       ) : null}
 
-      <View style={styles.buttonWrapper}>
-        <Button
-          disabled={isSubmittingSurvey}
-          onPress={onSubmit}
-          testID="submit-survey-button"
-          title={isSubmittingSurvey ? 'Submitting Survey...' : 'Submit Survey'}
-        />
-      </View>
+      <AppButton
+        disabled={isSubmittingSurvey}
+        isLoading={isSubmittingSurvey}
+        onPress={onSubmit}
+        size="lg"
+        style={styles.submitButton}
+        testID="submit-survey-button"
+        variant="primary"
+      >
+        {isSubmittingSurvey ? 'Submitting Survey...' : 'Submit Survey'}
+      </AppButton>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  buttonWrapper: {
-    marginTop: 8,
-    width: '100%',
+  checkMark: {
+    color: 'rgba(28, 28, 28, 0.7)',
+    fontSize: 15,
+    marginRight: 8,
   },
   contentContainer: {
     padding: 24,
   },
   errorText: {
-    color: '#b91c1c',
+    color: '#991b1b',
     fontSize: 14,
     lineHeight: 20,
     marginTop: 12,
   },
   optionButton: {
-    backgroundColor: '#f9fafb',
-    borderColor: '#d1d5db',
-    borderRadius: 14,
+    alignItems: 'center',
+    backgroundColor: '#fcfbf8',
+    borderColor: '#eceae4',
+    borderRadius: 10,
     borderWidth: 1,
+    flexDirection: 'row',
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
   optionButtonLabel: {
-    color: '#111827',
+    color: '#1c1c1c',
+    flex: 1,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   optionButtonLabelSelected: {
-    color: '#1d4ed8',
+    color: '#1c1c1c',
+    fontWeight: '600',
   },
   optionButtonSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#60a5fa',
+    backgroundColor: 'rgba(28, 28, 28, 0.04)',
+    borderColor: 'rgba(28, 28, 28, 0.4)',
+    borderWidth: 1.5,
   },
   optionGroup: {
     gap: 10,
+  },
+  scrollView: {
+    backgroundColor: '#f7f4ed',
+  },
+  submitButton: {
+    marginTop: 8,
+    width: '100%',
   },
 });
 
