@@ -180,7 +180,7 @@ afterEach(() => {
 });
 
 test('captures a receipt and shows a preview', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderWithQueryClient(<ReceiptUploadScreen />);
 
@@ -194,7 +194,7 @@ test('captures a receipt and shows a preview', async () => {
 });
 
 test('uploads a captured receipt and shows a success status', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderWithQueryClient(<ReceiptUploadScreen />);
 
@@ -218,7 +218,7 @@ test('uploads a captured receipt and shows a success status', async () => {
 });
 
 test('shows an error state and retries the same receipt after a failed upload', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedUploadReceipt
     .mockRejectedValueOnce(
@@ -260,7 +260,7 @@ test('shows an error state and retries the same receipt after a failed upload', 
 });
 
 test('shows ocr_failed card when OCR returns empty text', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedRecognizeReceiptText.mockResolvedValueOnce({ text: '', isEmpty: true });
 
@@ -274,7 +274,7 @@ test('shows ocr_failed card when OCR returns empty text', async () => {
 });
 
 test('shows ocr_failed card when OCR throws', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedRecognizeReceiptText.mockRejectedValueOnce(
     new Error('native module error'),
@@ -289,7 +289,7 @@ test('shows ocr_failed card when OCR throws', async () => {
 });
 
 test('shows wrong_type card when OCR text does not match receipt patterns', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
   const invalidOcrText = 'Hello World this is a document with no price';
 
   mockedRecognizeReceiptText.mockResolvedValueOnce({
@@ -314,7 +314,7 @@ test('shows wrong_type card when OCR text does not match receipt patterns', asyn
 });
 
 test('shows refund card when OCR text is a refund receipt', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
   const refundReceiptText = [
     '팀리미티드 편의점',
     '서울특별시 강남구 역삼로 310',
@@ -345,7 +345,7 @@ test('shows refund card when OCR text is a refund receipt', async () => {
 });
 
 test('accepts Korean receipt OCR text with comma-separated won amounts', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedRecognizeReceiptText.mockResolvedValueOnce({
     text: validReceiptOcrText,
@@ -363,7 +363,7 @@ test('accepts Korean receipt OCR text with comma-separated won amounts', async (
 });
 
 test('rejects totals-only OCR text without itemized unit price and quantity lines', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedRecognizeReceiptText.mockResolvedValueOnce({
     text: '결제금액 5,900원\n부가세 536원\n합계 5,900원\n카드 일시불',
@@ -382,7 +382,7 @@ test('rejects totals-only OCR text without itemized unit price and quantity line
 });
 
 test('uses launchImageLibrary when feature flag is true', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedGetUseLibraryPicker.mockResolvedValueOnce(true);
   mockedLaunchImageLibrary.mockResolvedValue({
@@ -423,7 +423,7 @@ test('auto-starts library capture when launched with library intent', async () =
 });
 
 test('uses DocumentScanner on ios and previews the first scanned page', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   setPlatformOS('ios');
   mockedScanDocument.mockResolvedValueOnce({
@@ -473,7 +473,7 @@ test('auto-starts camera capture when launched with camera intent', async () => 
 });
 
 test('falls back to launchCamera when ios document scanner throws', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
   const fallbackAsset: Asset = {
     fileName: 'fallback-receipt.jpg',
     type: 'image/jpeg',
@@ -499,7 +499,7 @@ test('falls back to launchCamera when ios document scanner throws', async () => 
 });
 
 test('blocks duplicate receipt in the client before upload when the fingerprint already exists', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedFetchReceipts.mockResolvedValueOnce([successResponse.receipt]);
 

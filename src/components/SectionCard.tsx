@@ -7,6 +7,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { colors, fontSizes, fontWeights, radii, space } from '../theme/tokens';
+
 interface SectionCardProps {
   children: React.ReactNode;
   description?: string;
@@ -35,24 +37,29 @@ function SectionCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fcfbf8',
-    borderColor: '#eceae4',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderColor: colors.ink300,
+    borderRadius: radii.md,
     borderWidth: 1,
-    marginBottom: 16,
-    padding: 20,
+    marginBottom: space.lg,
+    padding: space.xl,
+    shadowColor: colors.ink500,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
   },
   description: {
-    color: '#5f5f5d',
-    fontSize: 15,
+    color: colors.ink500,
+    fontSize: fontSizes.sm,
     lineHeight: 22,
-    marginBottom: 16,
+    marginBottom: space.lg,
   },
   title: {
-    color: '#1c1c1c',
-    fontSize: 17,
-    fontWeight: '600',
-    marginBottom: 8,
+    color: colors.ink900,
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
+    marginBottom: space.sm,
   },
 });
 

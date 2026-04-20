@@ -7,6 +7,13 @@ import { fetchReceipts } from '../src/api/receipts';
 import ReceiptListScreen from '../src/screens/ReceiptListScreen';
 import type { ReceiptItem } from '../src/types/receipt';
 
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
+}));
+
 jest.mock('../src/api/receipts', () => ({
   fetchReceipts: jest.fn(),
   receiptQueryKeys: {
@@ -85,7 +92,7 @@ test('shows a loading state while receipts are being fetched', () => {
 
   renderWithQueryClient(<ReceiptListScreen />);
 
-  expect(screen.getByText('Loading receipts...')).toBeTruthy();
+  expect(screen.getByTestId('receipt-list-loading')).toBeTruthy();
 });
 
 test('shows an empty state when no receipts have been uploaded yet', async () => {
@@ -93,11 +100,11 @@ test('shows an empty state when no receipts have been uploaded yet', async () =>
 
   renderWithQueryClient(<ReceiptListScreen />);
 
-  expect(await screen.findByText('No receipts uploaded yet.')).toBeTruthy();
+  expect(await screen.findByText('아직 영수증이 없어요')).toBeTruthy();
 });
 
 test('shows a retry action after a fetch failure', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedFetchReceipts
     .mockRejectedValueOnce(new Error('Unable to load receipts right now.'))
@@ -111,7 +118,7 @@ test('shows a retry action after a fetch failure', async () => {
 
   await user.press(screen.getByTestId('retry-receipts-button'));
 
-  expect(await screen.findByText('receipt-001.jpg')).toBeTruthy();
+  expect(await screen.findByText('Pending Review')).toBeTruthy();
 });
 
 test('renders uploaded receipts when data is available', async () => {
@@ -119,8 +126,8 @@ test('renders uploaded receipts when data is available', async () => {
 
   renderWithQueryClient(<ReceiptListScreen />);
 
-  expect(await screen.findByText('receipt-001.jpg')).toBeTruthy();
-  expect(screen.getByText('Pending Review')).toBeTruthy();
+  expect(await screen.findByText('Pending Review')).toBeTruthy();
+  expect(screen.getByText('5,900원')).toBeTruthy();
 });
 
 test('supports pull-to-refresh to refetch receipts', async () => {
@@ -128,7 +135,7 @@ test('supports pull-to-refresh to refetch receipts', async () => {
 
   renderWithQueryClient(<ReceiptListScreen />);
 
-  expect(await screen.findByText('receipt-001.jpg')).toBeTruthy();
+  expect(await screen.findByText('Pending Review')).toBeTruthy();
 
   const flatList = screen.getByTestId('receipt-list-success');
   const refreshControl = flatList.props.refreshControl;
@@ -138,18 +145,17 @@ test('supports pull-to-refresh to refetch receipts', async () => {
 });
 
 test('renders extracted receipt metadata and OCR text when available', async () => {
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
   mockedFetchReceipts.mockResolvedValue([sampleReceipt]);
 
   renderWithQueryClient(<ReceiptListScreen />);
 
-  expect(await screen.findByText('Total: 5,900원')).toBeTruthy();
-  expect(screen.getByText('VAT: 536원')).toBeTruthy();
-  expect(screen.getByText('Payment: 카드')).toBeTruthy();
-  expect(
-    screen.getByText('김밥 · Qty 1 · Unit 3,500원 · Amount 3,500원'),
-  ).toBeTruthy();
-  expect(
-    screen.getByText('삼각김밥 · Qty 2 · Unit 1,200원 · Amount 2,400원'),
-  ).toBeTruthy();
+  expect(await screen.findByText('5,900원')).toBeTruthy();
+  expect(screen.getByText('Pending')).toBeTruthy();
+
+  await user.press(screen.getByTestId('receipt-list-item-receipt-1'));
+
+  expect(screen.getByText('OCR 원문')).toBeTruthy();
   expect(screen.getByText(sampleReceipt.ocrText!)).toBeTruthy();
 });

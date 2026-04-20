@@ -34,21 +34,23 @@ test('renders the Home screen with all primary navigation buttons', () => {
     </NavigationContainer>,
   );
 
-  expect(screen.getByTestId('screen-home-title')).toHaveTextContent('Home');
-  expect(screen.getByText('Upload Receipt')).toBeTruthy();
-  expect(screen.getByText('Receipt List')).toBeTruthy();
-  expect(screen.getByText('Survey')).toBeTruthy();
-  expect(screen.getByText('Reward Result')).toBeTruthy();
+  expect(screen.getByTestId('screen-home-title')).toHaveTextContent(
+    'Receipt Club',
+  );
+  expect(screen.getByText('영수증 올리기')).toBeTruthy();
+  expect(screen.getByText('내 영수증')).toBeTruthy();
+  expect(screen.getByText('설문 참여')).toBeTruthy();
+  expect(screen.getByText('리워드 결과')).toBeTruthy();
 });
 
 test.each([
-  ['Receipt List', 'screen-receipt-list', 'screen-receipt-list-title'],
-  ['Survey', 'screen-survey', 'screen-survey-title'],
-  ['Reward Result', 'screen-reward-result', 'screen-reward-result-title'],
+  ['nav-receipt-list', 'screen-receipt-list', '내 영수증 📋'],
+  ['nav-survey', 'screen-survey', '설문에 답하고\n포인트를 받아요 📝'],
+  ['nav-reward-result', 'screen-reward-result', '아직 설문 결과가 없어요'],
 ])(
-  'navigates from Home to %s',
-  async (buttonTitle, screenTestID, titleTestID) => {
-    const user = userEvent.setup();
+  'navigates from Home using %s',
+  async (buttonTestID, screenTestID, expectedText) => {
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
     renderWithQueryClient(
       <NavigationContainer>
@@ -56,15 +58,15 @@ test.each([
       </NavigationContainer>,
     );
 
-    await user.press(screen.getByText(buttonTitle));
+    await user.press(screen.getByTestId(buttonTestID));
 
     expect(await screen.findByTestId(screenTestID)).toBeTruthy();
-    expect(screen.getByTestId(titleTestID)).toHaveTextContent(buttonTitle);
+    expect(await screen.findByText(expectedText)).toBeTruthy();
   },
 );
 
 test('opens the upload source sheet from Home before navigating', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderWithQueryClient(
     <NavigationContainer>
@@ -72,7 +74,7 @@ test('opens the upload source sheet from Home before navigating', async () => {
     </NavigationContainer>,
   );
 
-  await user.press(screen.getByText('Upload Receipt'));
+  await user.press(screen.getByTestId('nav-receipt-upload'));
 
   expect(await screen.findByTestId('upload-source-sheet')).toBeTruthy();
   expect(screen.getByTestId('upload-source-library')).toBeTruthy();

@@ -1,8 +1,10 @@
 import * as React from 'react';
 import {
+  Animated,
   Image,
   NativeModules,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -31,6 +33,7 @@ import {
   type UploadReceiptParams,
 } from '../api/receipts';
 import AppButton from '../components/AppButton';
+import PointsBadge from '../components/PointsBadge.tsx';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionCard from '../components/SectionCard';
 import StateCard from '../components/StateCard';
@@ -42,6 +45,7 @@ import type {
   ReceiptUploadLaunchMode,
   RootStackParamList,
 } from '../navigation/RootNavigator';
+import { colors, fontSizes, fontWeights, radii, space } from '../theme/tokens';
 import type { ReceiptItem } from '../types/receipt';
 import {
   getUseLibraryPicker,
@@ -112,6 +116,53 @@ function createAssetFromUri(uri: string): Asset {
   };
 }
 
+/** Indeterminate progress bar for uploading state */
+function IndeterminateBar() {
+  const [anim] = React.useState(() => new Animated.Value(-1));
+
+  React.useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim]);
+
+  const translateX = anim.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [-200, 200],
+  });
+
+  return (
+    <View style={barStyles.track}>
+      <Animated.View
+        style={[barStyles.fill, { transform: [{ translateX }] }]}
+      />
+    </View>
+  );
+}
+
+const barStyles = StyleSheet.create({
+  fill: {
+    backgroundColor: colors.lavender400,
+    borderRadius: radii.full,
+    height: '100%',
+    width: 120,
+  },
+  track: {
+    backgroundColor: colors.lavender200,
+    borderRadius: radii.full,
+    height: 6,
+    marginTop: space.sm,
+    overflow: 'hidden',
+    width: '100%',
+  },
+});
+
 function ReceiptUploadScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'ReceiptUpload'>>();
   const queryClient = useQueryClient();
@@ -145,14 +196,14 @@ function ReceiptUploadScreen() {
   const isUploading = uploadMutation.isPending;
 
   const displayMessage = isUploading
-    ? 'Uploading receipt...'
+    ? '업로드 중...'
     : uploadMutation.isSuccess
       ? uploadMutation.data.message
       : uploadMutation.isError
         ? getUploadErrorMessage(uploadMutation.error)
         : selectedAsset && ocrText
-          ? `Ready to upload ${selectedAsset.fileName || 'the captured receipt'}.`
-          : 'Capture a receipt using the camera to start the upload flow.';
+          ? `${selectedAsset.fileName || '영수증'} 업로드 준비 완료`
+          : '카메라로 영수증을 촬영하면 업로드할 수 있어요.';
 
   const captureWithDocumentScanner =
     React.useCallback(async (): Promise<Asset | null> => {
@@ -345,20 +396,17 @@ function ReceiptUploadScreen() {
   return (
     <ScrollView
       contentContainerStyle={styles.contentContainer}
-      style={styles.scrollView}
+      style={styles.scroll}
       testID="screen-receipt-upload"
     >
       <ScreenHeader
-        description="Capture a receipt with the camera, verify it with on-device OCR, then upload."
-        title="Upload Receipt"
+        description="카메라로 영수증을 촬영하고, 기기 OCR로 확인한 뒤 업로드하세요."
+        title="영수증 올리기 📷"
         titleTestID="screen-receipt-upload-title"
       />
 
       {/* Step 1 — Capture */}
-      <SectionCard
-        description="The image is captured via the device camera and verified with on-device OCR before upload."
-        title="1. Capture a receipt"
-      >
+      <SectionCard title="1. 영수증 촬영">
         <View style={styles.buttonGroup}>
           <AppButton
             disabled={isUploading}
@@ -367,10 +415,9 @@ function ReceiptUploadScreen() {
             }}
             size="lg"
             testID="pick-receipt-button"
+            title="영수증 스캔하기"
             variant="primary"
-          >
-            Capture Receipt
-          </AppButton>
+          />
           {__DEV__ ? (
             <AppButton
               onPress={async () => {
@@ -380,23 +427,30 @@ function ReceiptUploadScreen() {
               }}
               size="sm"
               testID="dev-flag-toggle"
+              title={`[DEV] ${useLibraryPicker ? 'Library' : 'Camera'}`}
               variant="ghost"
-            >
-              {`[DEV] Picker: ${useLibraryPicker ? 'Library' : 'Camera'}`}
-            </AppButton>
+            />
           ) : null}
         </View>
       </SectionCard>
 
       {/* Step 2 — Preview */}
-      <SectionCard title="2. Preview the selected file">
+      <SectionCard title="2. 미리보기">
         {selectedAsset?.uri ? (
-          <>
-            <Image
-              source={{ uri: selectedAsset.uri }}
-              style={styles.previewImage}
-              testID="receipt-preview-image"
-            />
+          <View>
+            <View>
+              <Image
+                source={{ uri: selectedAsset.uri }}
+                style={styles.previewImage}
+                testID="receipt-preview-image"
+              />
+              <Pressable
+                onPress={() => handleCaptureReceipt()}
+                style={styles.retakeButton}
+              >
+                <Text style={styles.retakeButtonLabel}>다시 찍기</Text>
+              </Pressable>
+            </View>
             <Text style={styles.fileName} testID="receipt-file-name">
               {selectedAsset.fileName || 'Unnamed receipt'}
             </Text>
@@ -404,51 +458,47 @@ function ReceiptUploadScreen() {
               {selectedAsset.type || 'Unknown type'} ·{' '}
               {formatFileSize(selectedAsset.fileSize)}
             </Text>
-          </>
+          </View>
         ) : (
           <View style={styles.emptyPreview} testID="receipt-preview-empty">
             <Text style={styles.emptyPreviewIcon}>🧾</Text>
             <Text style={styles.emptyPreviewText}>
-              No receipt captured yet.
+              영수증을 촬영하면 여기 표시돼요
             </Text>
           </View>
         )}
       </SectionCard>
 
       {/* Step 3 — Upload */}
-      <SectionCard
-        description="Toggle mock failure when you want to exercise retry handling without a real backend."
-        title="3. Trigger the upload request"
-      >
+      <SectionCard title="3. 업로드">
         <View style={styles.buttonGroup}>
           <AppButton
             disabled={!selectedAsset || !ocrText || isUploading}
             onPress={() => setSimulateFailure(prev => !prev)}
             size="sm"
             testID="simulate-failure-toggle"
+            title={`실패 시뮬레이션: ${simulateFailure ? 'ON' : 'OFF'}`}
             variant="ghost"
-          >
-            {`Simulate Failure: ${simulateFailure ? 'On' : 'Off'}`}
-          </AppButton>
+          />
           <AppButton
             disabled={!selectedAsset || !ocrText || isUploading}
-            isLoading={isUploading}
+            loading={isUploading}
             onPress={() => handleUpload()}
             size="lg"
             testID="upload-receipt-button"
+            title={isUploading ? '업로드 중...' : '영수증 업로드'}
             variant="primary"
-          >
-            {isUploading ? 'Uploading...' : 'Upload Receipt'}
-          </AppButton>
+          />
+          {isUploading ? <IndeterminateBar /> : null}
           {uploadMutation.isError ? (
             <AppButton
               disabled={!selectedAsset || !ocrText || isUploading}
               onPress={() => handleUpload(false)}
+              size="md"
               testID="retry-upload-button"
-              variant="ghost"
-            >
-              Retry Upload
-            </AppButton>
+              title="다시 시도"
+              variant="secondary"
+            />
           ) : null}
         </View>
       </SectionCard>
@@ -456,111 +506,129 @@ function ReceiptUploadScreen() {
       {/* Capture failure cards */}
       {captureFailure === 'ocr_failed' ? (
         <StateCard
-          message="We couldn't read the receipt. Try again in better lighting."
-          testID="receipt-capture-failure-ocr"
-          title="Couldn't read the receipt"
           variant="error"
+          title="영수증을 읽을 수 없어요"
+          message="더 밝은 곳에서 다시 시도해 주세요."
+          testID="receipt-capture-failure-ocr"
         />
       ) : null}
       {captureFailure === 'wrong_type' ? (
         <StateCard
-          message="Only grocery and supermarket receipts are accepted."
-          testID="receipt-capture-failure-wrong-type"
-          title="Wrong receipt type"
           variant="error"
+          title="지원하지 않는 영수증 유형"
+          message="식료품·마트 영수증만 접수돼요."
+          testID="receipt-capture-failure-wrong-type"
         />
       ) : null}
       {captureFailure === 'refund' ? (
         <StateCard
-          message="Refund and cancellation receipts are not eligible for points."
-          testID="receipt-capture-failure-refund"
-          title="Refund receipt not accepted"
           variant="error"
+          title="환불 영수증은 불가해요"
+          message="환불·취소 영수증은 포인트 적립 대상이 아니에요."
+          testID="receipt-capture-failure-refund"
         />
       ) : null}
       {captureFailure === 'duplicate' ? (
         <StateCard
-          message="This receipt has already been submitted."
-          testID="receipt-capture-failure-duplicate"
-          title="Duplicate receipt"
           variant="error"
+          title="이미 등록된 영수증이에요"
+          message="동일한 영수증이 이미 제출되었어요."
+          testID="receipt-capture-failure-duplicate"
         />
       ) : null}
       {captureFailure === 'cancelled' ? (
         <StateCard
-          message="Unable to access the camera. Check your permissions and try again."
-          testID="receipt-capture-failure-cancelled"
-          title="Camera unavailable"
           variant="error"
+          title="카메라를 사용할 수 없어요"
+          message="권한을 확인하고 다시 시도해 주세요."
+          testID="receipt-capture-failure-cancelled"
         />
       ) : null}
 
-      {/* Upload status */}
+      {/* Upload status card */}
       <StateCard
         message={displayMessage}
         showsActivityIndicator={isUploading}
         testID="receipt-upload-status"
-        title="Upload status"
+        title="업로드 상태"
         variant={
           uploadMutation.isSuccess
             ? 'success'
             : uploadMutation.isError
               ? 'error'
-              : 'info'
+              : isUploading
+                ? 'loading'
+                : 'info'
         }
-      />
+      >
+        {uploadMutation.isSuccess ? <PointsBadge points={50} /> : null}
+      </StateCard>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   buttonGroup: {
-    gap: 10,
+    gap: space.md,
   },
   contentContainer: {
-    padding: 24,
+    padding: space.xl,
+    paddingBottom: space['3xl'],
   },
   emptyPreview: {
     alignItems: 'center',
-    backgroundColor: 'rgba(28, 28, 28, 0.03)',
-    borderColor: '#eceae4',
-    borderRadius: 12,
+    backgroundColor: colors.ink100,
+    borderColor: colors.ink300,
+    borderRadius: radii.md,
     borderStyle: 'dashed',
-    borderWidth: 1.5,
+    borderWidth: 2,
     justifyContent: 'center',
     minHeight: 220,
-    padding: 24,
+    padding: space.xl,
   },
   emptyPreviewIcon: {
-    fontSize: 40,
-    marginBottom: 8,
-    opacity: 0.4,
+    fontSize: 56,
+    marginBottom: space.md,
+    opacity: 0.35,
   },
   emptyPreviewText: {
-    color: '#5f5f5d',
-    fontSize: 15,
+    color: colors.ink500,
+    fontSize: fontSizes.sm,
     textAlign: 'center',
   },
   fileName: {
-    color: '#1c1c1c',
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 12,
+    color: colors.ink900,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+    marginTop: space.md,
   },
   metadata: {
-    color: '#5f5f5d',
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 4,
+    color: colors.ink500,
+    fontSize: fontSizes.sm,
+    marginTop: space.xs,
   },
   previewImage: {
-    backgroundColor: '#eceae4',
-    borderRadius: 12,
+    backgroundColor: colors.ink100,
+    borderRadius: radii.md,
     height: 220,
     width: '100%',
   },
-  scrollView: {
-    backgroundColor: '#f7f4ed',
+  retakeButton: {
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: radii.full,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+    position: 'absolute',
+    right: space.sm,
+    top: space.sm,
+  },
+  retakeButtonLabel: {
+    color: colors.surface,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+  },
+  scroll: {
+    backgroundColor: colors.canvas,
   },
 });
 

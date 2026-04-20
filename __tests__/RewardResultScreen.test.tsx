@@ -39,7 +39,7 @@ afterEach(() => {
 });
 
 test('shows a retry action after failing to load the latest reward result', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
   let shouldResolveAfterRetry = false;
 
   mockedFetchLatestRewardResult.mockImplementation(async () => {
@@ -61,7 +61,5 @@ test('shows a retry action after failing to load the latest reward result', asyn
   shouldResolveAfterRetry = true;
   await user.press(screen.getByTestId('retry-reward-result-button'));
 
-  expect(
-    await screen.findByText('Complete the survey to calculate your reward.'),
-  ).toBeTruthy();
+  expect(await screen.findByText('아직 설문 결과가 없어요')).toBeTruthy();
 });

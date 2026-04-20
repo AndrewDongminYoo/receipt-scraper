@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {
-  ActivityIndicator,
+  Animated,
   type StyleProp,
   StyleSheet,
   Text,
@@ -8,7 +8,15 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-type StateCardVariant = 'error' | 'info' | 'neutral' | 'success';
+import { colors, fontSizes, fontWeights, radii, space } from '../theme/tokens';
+
+export type StateCardVariant =
+  | 'error'
+  | 'info'
+  | 'neutral'
+  | 'success'
+  | 'loading'
+  | 'empty';
 
 interface StateCardProps {
   children?: React.ReactNode;
@@ -20,6 +28,109 @@ interface StateCardProps {
   variant?: StateCardVariant;
 }
 
+/** Three bouncing dots shown for loading variant */
+function BouncingDots() {
+  const [dot1] = React.useState(() => new Animated.Value(0));
+  const [dot2] = React.useState(() => new Animated.Value(0));
+  const [dot3] = React.useState(() => new Animated.Value(0));
+
+  React.useEffect(() => {
+    const makeBounce = (dot: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, {
+            toValue: -8,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.delay(500),
+        ]),
+      );
+
+    const a1 = makeBounce(dot1, 0);
+    const a2 = makeBounce(dot2, 150);
+    const a3 = makeBounce(dot3, 300);
+    a1.start();
+    a2.start();
+    a3.start();
+
+    return () => {
+      a1.stop();
+      a2.stop();
+      a3.stop();
+    };
+  }, [dot1, dot2, dot3]);
+
+  return (
+    <View style={dotsStyles.row}>
+      {[dot1, dot2, dot3].map((dot, i) => (
+        <Animated.View
+          key={i}
+          style={[dotsStyles.dot, { transform: [{ translateY: dot }] }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const dotsStyles = StyleSheet.create({
+  dot: {
+    backgroundColor: colors.primary500,
+    borderRadius: radii.full,
+    height: 8,
+    width: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: space.sm,
+    justifyContent: 'center',
+    marginBottom: space.sm,
+  },
+});
+
+/** Shake animation wrapper for error variant */
+function useShakeAnim() {
+  const [translateX] = React.useState(() => new Animated.Value(0));
+
+  React.useEffect(() => {
+    Animated.sequence([
+      Animated.timing(translateX, {
+        toValue: 8,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateX, {
+        toValue: -8,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateX, {
+        toValue: 4,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateX, {
+        toValue: -4,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateX, {
+        toValue: 0,
+        duration: 60,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [translateX]);
+
+  return translateX;
+}
+
 function StateCard({
   children,
   message,
@@ -29,22 +140,38 @@ function StateCard({
   title,
   variant = 'neutral',
 }: StateCardProps) {
+  const shakeX = useShakeAnim();
+
+  const resolvedVariant: 'error' | 'info' | 'neutral' | 'success' =
+    variant === 'loading' || variant === 'empty' ? 'neutral' : variant;
+
+  const Wrapper = variant === 'error' ? Animated.View : View;
+  const wrapperStyle =
+    variant === 'error'
+      ? [
+          containerStyles[resolvedVariant],
+          style,
+          { transform: [{ translateX: shakeX }] },
+        ]
+      : [containerStyles[resolvedVariant], style];
+
   return (
-    <View
-      style={[styles.card, containerStyles[variant], style]}
+    <Wrapper
+      style={[
+        styles.card,
+        ...(Array.isArray(wrapperStyle) ? wrapperStyle : [wrapperStyle]),
+      ]}
       testID={testID}
     >
-      {showsActivityIndicator ? (
-        <ActivityIndicator
-          color={indicatorColors[variant]}
-          size="small"
-          testID={testID ? `${testID}-spinner` : undefined}
-        />
+      {variant === 'loading' || showsActivityIndicator ? (
+        <BouncingDots />
       ) : null}
-      <Text style={[styles.title, titleStyles[variant]]}>{title}</Text>
-      <Text style={[styles.message, messageStyles[variant]]}>{message}</Text>
+      <Text style={[styles.title, titleStyles[resolvedVariant]]}>{title}</Text>
+      <Text style={[styles.message, messageStyles[resolvedVariant]]}>
+        {message}
+      </Text>
       {children ? <View style={styles.actions}>{children}</View> : null}
-    </View>
+    </Wrapper>
   );
 }
 
@@ -54,59 +181,69 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   card: {
-    borderRadius: 12,
+    borderRadius: radii.md,
     borderWidth: 1,
-    gap: 8,
-    padding: 20,
+    gap: space.sm,
+    marginBottom: space.lg,
+    padding: space.xl,
   },
   message: {
-    fontSize: 15,
+    fontSize: fontSizes.sm,
     lineHeight: 22,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
   },
 });
 
 const containerStyles = StyleSheet.create({
   error: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
+    backgroundColor: colors.errorBg,
+    borderColor: colors.errorBorder,
   },
   info: {
-    backgroundColor: '#fcfbf8',
-    borderColor: '#eceae4',
+    backgroundColor: colors.surfaceSubtle,
+    borderColor: colors.primary200,
   },
   neutral: {
-    backgroundColor: '#fcfbf8',
-    borderColor: '#eceae4',
+    backgroundColor: colors.ink100,
+    borderColor: colors.ink300,
   },
   success: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#6ee7b7',
+    backgroundColor: colors.successBg,
+    borderColor: colors.successBorder,
   },
 });
 
 const titleStyles = StyleSheet.create({
-  error: { color: '#991b1b' },
-  info: { color: '#1c1c1c' },
-  neutral: { color: '#1c1c1c' },
-  success: { color: '#065f46' },
+  error: {
+    color: colors.errorText,
+  },
+  info: {
+    color: colors.primary600,
+  },
+  neutral: {
+    color: colors.ink900,
+  },
+  success: {
+    color: colors.successText,
+  },
 });
 
 const messageStyles = StyleSheet.create({
-  error: { color: '#b91c1c' },
-  info: { color: '#5f5f5d' },
-  neutral: { color: '#5f5f5d' },
-  success: { color: '#047857' },
+  error: {
+    color: colors.errorText,
+  },
+  info: {
+    color: colors.ink700,
+  },
+  neutral: {
+    color: colors.ink500,
+  },
+  success: {
+    color: colors.successText,
+  },
 });
-
-const indicatorColors: Record<StateCardVariant, string> = {
-  error: '#991b1b',
-  info: '#5f5f5d',
-  neutral: '#5f5f5d',
-  success: '#065f46',
-};
 
 export default StateCard;

@@ -22,6 +22,9 @@ import type { ReceiptItem } from '../src/types/receipt';
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({
+    navigate: jest.fn(),
+  }),
   useRoute: jest.fn(),
 }));
 
@@ -153,11 +156,11 @@ afterEach(() => {
 });
 
 test('refreshes the receipt list after a successful upload', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderWithQueryClient(<ReceiptFlowHarness />);
 
-  expect(await screen.findByText('No receipts uploaded yet.')).toBeTruthy();
+  expect(await screen.findByText('아직 영수증이 없어요')).toBeTruthy();
 
   await user.press(screen.getByTestId('pick-receipt-button'));
   expect(await screen.findByTestId('receipt-preview-image')).toBeTruthy();
@@ -173,7 +176,6 @@ test('refreshes the receipt list after a successful upload', async () => {
   await waitFor(() => {
     const receiptListItem = screen.getByTestId('receipt-list-item-receipt-1');
 
-    expect(within(receiptListItem).getByText('receipt-001.jpg')).toBeTruthy();
     expect(within(receiptListItem).getByText('Pending Review')).toBeTruthy();
   });
 

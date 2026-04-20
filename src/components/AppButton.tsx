@@ -1,74 +1,102 @@
 import * as React from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
-  type PressableProps,
   type StyleProp,
   StyleSheet,
   Text,
   type ViewStyle,
 } from 'react-native';
 
-type ButtonVariant = 'primary' | 'ghost' | 'surface';
-type ButtonSize = 'sm' | 'md' | 'lg';
+import { colors, fontSizes, fontWeights, radii, space } from '../theme/tokens';
 
-interface AppButtonProps extends Omit<PressableProps, 'style'> {
-  children: React.ReactNode;
-  isLoading?: boolean;
-  size?: ButtonSize;
+export type AppButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type AppButtonSize = 'sm' | 'md' | 'lg';
+
+interface AppButtonProps {
+  disabled?: boolean;
+  loading?: boolean;
+  onPress?: () => void;
+  size?: AppButtonSize;
   style?: StyleProp<ViewStyle>;
-  variant?: ButtonVariant;
+  testID?: string;
+  title: string;
+  variant?: AppButtonVariant;
 }
 
 function AppButton({
-  children,
-  disabled,
-  isLoading = false,
+  disabled = false,
+  loading = false,
   onPress,
   size = 'md',
   style,
   testID,
+  title,
   variant = 'primary',
-  ...rest
 }: AppButtonProps) {
-  const isDisabled = disabled || isLoading;
+  const [scale] = React.useState(() => new Animated.Value(1));
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      damping: 10,
+      stiffness: 300,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 10,
+      stiffness: 300,
+    }).start();
+  };
+
+  const isDisabled = disabled || loading;
 
   return (
-    <Pressable
-      {...rest}
-      disabled={isDisabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.base,
-        sizeStyles[size],
-        variantStyles[variant],
-        pressed && styles.pressed,
-        isDisabled && styles.disabled,
-        style,
-      ]}
-      testID={testID}
-    >
-      {isLoading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? '#fcfbf8' : '#1c1c1c'}
-          size="small"
-          testID={testID ? `${testID}-spinner` : undefined}
-        />
-      ) : (
-        <Text
-          style={[styles.label, labelStyles[variant], sizeTextStyles[size]]}
-        >
-          {children}
-        </Text>
-      )}
-    </Pressable>
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <Pressable
+        disabled={isDisabled}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.base,
+          sizeStyles[size],
+          variantStyles[variant],
+          isDisabled && styles.disabled,
+        ]}
+        testID={testID}
+      >
+        {loading ? (
+          <ActivityIndicator
+            color={
+              variant === 'primary' || variant === 'danger'
+                ? colors.surface
+                : colors.primary500
+            }
+            size="small"
+          />
+        ) : (
+          <Text
+            style={[styles.label, labelStyles[variant], sizeLabelStyles[size]]}
+          >
+            {title}
+          </Text>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: radii.lg,
     flexDirection: 'row',
     justifyContent: 'center',
   },
@@ -76,55 +104,70 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '400',
-    lineHeight: 24,
-  },
-  pressed: {
-    opacity: 0.8,
+    fontWeight: fontWeights.bold,
   },
 });
 
 const sizeStyles = StyleSheet.create({
-  lg: { paddingHorizontal: 24, paddingVertical: 14 },
-  md: { paddingHorizontal: 16, paddingVertical: 10 },
-  sm: { paddingHorizontal: 12, paddingVertical: 6 },
+  sm: {
+    minHeight: 40,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.sm,
+  },
+  md: {
+    minHeight: 52,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
+  },
+  lg: {
+    minHeight: 60,
+    paddingHorizontal: space['2xl'],
+    paddingVertical: space.lg,
+  },
 });
 
-const sizeTextStyles = StyleSheet.create({
-  lg: { fontSize: 17 },
-  md: { fontSize: 16 },
-  sm: { fontSize: 14 },
-});
-
-// Lovable-style inset shadow approximation for primary variant
 const variantStyles = StyleSheet.create({
+  primary: {
+    backgroundColor: colors.primary500,
+  },
+  secondary: {
+    backgroundColor: colors.surface,
+    borderColor: colors.primary500,
+    borderWidth: 2,
+  },
   ghost: {
     backgroundColor: 'transparent',
-    borderColor: 'rgba(28, 28, 28, 0.4)',
-    borderWidth: StyleSheet.hairlineWidth * 2,
   },
-  primary: {
-    backgroundColor: '#1c1c1c',
-    borderColor: 'rgba(0, 0, 0, 0.35)',
-    borderTopColor: 'rgba(255, 255, 255, 0.20)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderWidth: StyleSheet.hairlineWidth,
-    elevation: 1,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  surface: {
-    backgroundColor: '#f7f4ed',
+  danger: {
+    backgroundColor: colors.errorText,
   },
 });
 
 const labelStyles = StyleSheet.create({
-  ghost: { color: '#1c1c1c' },
-  primary: { color: '#fcfbf8' },
-  surface: { color: '#1c1c1c' },
+  primary: {
+    color: colors.surface,
+  },
+  secondary: {
+    color: colors.primary500,
+  },
+  ghost: {
+    color: colors.primary500,
+  },
+  danger: {
+    color: colors.surface,
+  },
+});
+
+const sizeLabelStyles = StyleSheet.create({
+  sm: {
+    fontSize: fontSizes.sm,
+  },
+  md: {
+    fontSize: fontSizes.md,
+  },
+  lg: {
+    fontSize: fontSizes.lg,
+  },
 });
 
 export default AppButton;

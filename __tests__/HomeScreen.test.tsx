@@ -43,7 +43,7 @@ function expectNoActWarnings() {
 }
 
 test('opens the upload source sheet before navigating to receipt upload', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderWithQueryClient(<HomeScreen />);
 
@@ -57,7 +57,7 @@ test('opens the upload source sheet before navigating to receipt upload', async 
 });
 
 test('navigates to receipt upload with library auto-start intent', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderWithQueryClient(<HomeScreen />);
 
@@ -72,7 +72,7 @@ test('navigates to receipt upload with library auto-start intent', async () => {
 });
 
 test('shows scanner guide before navigating to camera auto-start', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderWithQueryClient(<HomeScreen />);
 

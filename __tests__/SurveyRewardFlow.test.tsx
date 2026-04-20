@@ -87,7 +87,7 @@ function renderRootFlow() {
 }
 
 async function openSurveyScreen(user: ReturnType<typeof userEvent.setup>) {
-  await user.press(screen.getByText('Survey'));
+  await user.press(screen.getByTestId('nav-survey'));
 }
 
 async function answerSurveyQuestions(user: ReturnType<typeof userEvent.setup>) {
@@ -97,16 +97,14 @@ async function answerSurveyQuestions(user: ReturnType<typeof userEvent.setup>) {
 }
 
 test('shows an empty reward state when no survey has been submitted yet', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderRootFlow();
 
-  await user.press(screen.getByText('Reward Result'));
+  await user.press(screen.getByTestId('nav-reward-result'));
 
   expect(await screen.findByTestId('screen-reward-result')).toBeTruthy();
-  expect(
-    await screen.findByText('Complete the survey to calculate your reward.'),
-  ).toBeTruthy();
+  expect(await screen.findByText('아직 설문 결과가 없어요')).toBeTruthy();
   expect(
     consoleErrorSpy.mock.calls.some(
       ([message]) =>
@@ -116,25 +114,19 @@ test('shows an empty reward state when no survey has been submitted yet', async 
   ).toBe(false);
 });
 
-test('validates required survey answers before submit', async () => {
-  const user = userEvent.setup();
+test('keeps submit disabled until all required survey answers are selected', async () => {
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderRootFlow();
 
   await openSurveyScreen(user);
   expect(await screen.findByTestId('screen-survey')).toBeTruthy();
 
-  await user.press(screen.getByTestId('submit-survey-button'));
+  expect(screen.getByTestId('submit-survey-button')).toBeDisabled();
 
-  expect(
-    await screen.findByText('Choose one option for visit purpose.'),
-  ).toBeTruthy();
-  expect(
-    screen.getByText('Choose one option for who the purchase was for.'),
-  ).toBeTruthy();
-  expect(
-    screen.getByText('Choose one option for payment method.'),
-  ).toBeTruthy();
+  await answerSurveyQuestions(user);
+
+  expect(screen.getByTestId('submit-survey-button')).toBeEnabled();
   expect(mockedSubmitSurvey).not.toHaveBeenCalled();
   expect(
     consoleErrorSpy.mock.calls.some(
@@ -146,7 +138,7 @@ test('validates required survey answers before submit', async () => {
 });
 
 test('disables repeated submit while the survey request is in flight', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
   let resolveSubmission!: (
     value: SubmitResult | PromiseLike<SubmitResult>,
   ) => void;
@@ -194,7 +186,7 @@ test('disables repeated submit while the survey request is in flight', async () 
 });
 
 test('submits the survey and navigates to the reward result screen', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   renderRootFlow();
 
@@ -205,7 +197,6 @@ test('submits the survey and navigates to the reward result screen', async () =>
   await user.press(screen.getByTestId('submit-survey-button'));
 
   expect(await screen.findByTestId('screen-reward-result')).toBeTruthy();
-  expect(await screen.findByText('35 points earned')).toBeTruthy();
   expect(
     screen.getByText(
       'Thanks for sharing your receipt context. Your bonus is ready.',
@@ -223,7 +214,7 @@ test('submits the survey and navigates to the reward result screen', async () =>
 });
 
 test('shows a submission error without leaving the survey screen', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
   mockedSubmitSurvey.mockRejectedValueOnce(
     new Error('We could not submit your survey. Please try again.'),
