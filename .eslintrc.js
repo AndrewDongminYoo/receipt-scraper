@@ -127,6 +127,7 @@ module.exports = {
     // Metro's resolver and React Native's Flow types cause false positives; disable both.
     'import/no-unresolved': 'off',
     'import/namespace': 'off',
+    'import/named': 'off',
 
     // Unused-vars detection delegated entirely to this plugin (the two rules above must stay off).
     'unused-imports/no-unused-imports': 'error',
