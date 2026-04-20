@@ -35,23 +35,23 @@ function SectionCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d1d5db',
-    borderRadius: 16,
+    backgroundColor: '#fcfbf8',
+    borderColor: '#eceae4',
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 16,
     padding: 20,
   },
   description: {
-    color: '#4b5563',
+    color: '#5f5f5d',
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 16,
   },
   title: {
-    color: '#111827',
-    fontSize: 18,
-    fontWeight: '700',
+    color: '#1c1c1c',
+    fontSize: 17,
+    fontWeight: '600',
     marginBottom: 8,
   },
 });

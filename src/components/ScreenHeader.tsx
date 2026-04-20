@@ -23,15 +23,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   description: {
-    color: '#4b5563',
+    color: '#5f5f5d',
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
     textAlign: 'left',
   },
   title: {
+    color: '#1c1c1c',
     fontSize: 28,
     fontWeight: '700',
-    marginBottom: 12,
+    letterSpacing: -0.5,
+    marginBottom: 8,
     textAlign: 'left',
   },
 });

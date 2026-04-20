@@ -24,38 +24,36 @@ export type RootStackParamList = {
   RewardResult: undefined;
 };
 
+const screenOptions = {
+  contentStyle: { backgroundColor: '#f7f4ed' },
+  headerStyle: { backgroundColor: '#f7f4ed' },
+  headerTintColor: '#1c1c1c',
+  headerTitleStyle: { color: '#1c1c1c', fontWeight: '600' as const },
+};
+
 export const RootStack = createNativeStackNavigator({
   initialRouteName: 'Home',
+  screenOptions: screenOptions,
   screens: {
     Home: {
       screen: HomeScreen,
-      options: {
-        title: 'Home',
-      },
+      options: { title: 'Home' },
     },
     ReceiptUpload: {
       screen: ReceiptUploadScreen,
-      options: {
-        title: 'Upload Receipt',
-      },
+      options: { title: 'Upload Receipt' },
     },
     ReceiptList: {
       screen: ReceiptListScreen,
-      options: {
-        title: 'Receipt List',
-      },
+      options: { title: 'Receipt List' },
     },
     Survey: {
       screen: SurveyScreen,
-      options: {
-        title: 'Survey',
-      },
+      options: { title: 'Survey' },
     },
     RewardResult: {
       screen: RewardResultScreen,
-      options: {
-        title: 'Reward Result',
-      },
+      options: { title: 'Reward Result' },
     },
   },
 });
