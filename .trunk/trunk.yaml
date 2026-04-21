@@ -24,19 +24,19 @@ lint:
     - linters: [shfmt, shellcheck]
       paths: [android/gradlew]
   enabled:
-    - cspell@9.7.0
-    - checkov@3.2.513
+    - cspell@10.0.0
+    - checkov@3.2.524
     - dotenv-linter@4.0.0
-    - eslint@8.57.0
+    - eslint@9.39.4
     - git-diff-check
     - ktlint@1.8.0
     - markdownlint@0.48.0
     - osv-scanner@2.3.5
     - oxipng@10.1.0
-    - prettier@3.8.1
+    - prettier@3.8.3
     - shellcheck@0.11.0
     - shfmt@3.6.0
-    - trufflehog@3.94.2
+    - trufflehog@3.94.3
     - yamllint@1.38.0
 actions:
   enabled:
