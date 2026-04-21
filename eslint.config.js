@@ -173,12 +173,7 @@ module.exports = defineConfig([
   },
   {
     files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
-    // extends: compat.extends('plugin:jest/recommended'),
-
-    plugins: {
-      // jest,
-    },
-
+    ...jest.recommended,
     languageOptions: {
       globals: {
         ...jest.environments.globals.globals,
