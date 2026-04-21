@@ -1,78 +1,83 @@
-const { defineConfig, globalIgnores } = require('eslint/config');
-
-const globals = require('globals');
-const parser = require('@typescript-eslint/parser');
-
-const { fixupConfigRules, fixupPluginRules } = require('@eslint/compat');
-
-const tsLint = require('@typescript-eslint/eslint-plugin');
-const _import = require('eslint-plugin-import');
-const simple = require('eslint-plugin-simple-import-sort');
-const unused = require('eslint-plugin-unused-imports');
-const jest = require('eslint-plugin-jest');
 const js = require('@eslint/js');
+const globals = require('globals');
+const tsParser = require('@typescript-eslint/parser');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
+const importPlugin = require('eslint-plugin-import');
+const reactHooks = require('eslint-plugin-react-hooks');
+const reactPlugin = require('eslint-plugin-react');
+const simpleImportSort = require('eslint-plugin-simple-import-sort');
+const unusedImports = require('eslint-plugin-unused-imports');
+const jestPlugin = require('eslint-plugin-jest');
+const prettier = require('eslint-config-prettier');
 
-const { FlatCompat } = require('@eslint/eslintrc');
+const IMPORT_SORT_GROUPS = [
+  ['^(?:\\u0000)?.+\\.(css|scss|sass|less|stylus)(?:\\?.*)?$'],
+  ['^react$', '^react-native$'],
+  ['^@?\\w'],
+  [
+    '^(@|src/|components/|screens/|hooks/|utils/|services/|store/|assets/|theme/|types/)',
+  ],
+  ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+  ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+  ['^\\u0000'],
+  ['^.+\\.json$'],
+];
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
-
-module.exports = defineConfig([
+module.exports = [
   {
-    languageOptions: {
-      globals: {
-        ...globals.node,
-      },
+    ignores: [
+      '**/node_modules/**',
+      '**/coverage/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/android/**',
+      '**/ios/**',
+      '**/*.generated.*',
+      'babel.config.js',
+      'metro.config.js',
+      'jest.config.js',
+    ],
+  },
 
-      parser: parser,
+  js.configs.recommended,
+  prettier,
+
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
       ecmaVersion: 'latest',
       sourceType: 'module',
-
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
         },
       },
+      globals: {
+        ...globals.node,
+      },
     },
-
-    extends: fixupConfigRules(
-      compat.extends(
-        '@react-native',
-        'plugin:@typescript-eslint/recommended',
-        'plugin:import/recommended',
-        'plugin:react-hooks/recommended',
-        'prettier',
-      ),
-    ),
-
     plugins: {
-      '@typescript-eslint': fixupPluginRules(tsLint),
-      import: fixupPluginRules(_import),
-      'simple-import-sort': simple,
-      'unused-imports': unused,
+      '@typescript-eslint': tsPlugin,
+      import: importPlugin,
+      react: reactPlugin,
+      'react-hooks': reactHooks,
+      'simple-import-sort': simpleImportSort,
+      'unused-imports': unusedImports,
     },
-
     settings: {
       react: {
         version: 'detect',
       },
     },
-
     rules: {
-      'no-console': [
-        'warn',
-        {
-          allow: ['warn', 'error'],
-        },
-      ],
-
+      // General
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'warn',
+
+      // TypeScript
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-
       '@typescript-eslint/consistent-type-imports': [
         'error',
         {
@@ -80,10 +85,8 @@ module.exports = defineConfig([
           fixStyle: 'inline-type-imports',
         },
       ],
-
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-floating-promises': 'off',
-
       '@typescript-eslint/ban-ts-comment': [
         'warn',
         {
@@ -95,12 +98,12 @@ module.exports = defineConfig([
         },
       ],
 
+      // React
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
       'react/require-default-props': 'off',
       'react/prop-types': 'off',
       'react/display-name': 'off',
-
       'react/function-component-definition': [
         'error',
         {
@@ -109,27 +112,19 @@ module.exports = defineConfig([
         },
       ],
 
+      // Hooks
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+
+      // Imports
       'sort-imports': 'off',
       'import/order': 'off',
-
       'simple-import-sort/imports': [
         'error',
         {
-          groups: [
-            ['^(?:\\u0000)?.+\\.(css|scss|sass|less|stylus)(?:\\?.*)?$'],
-            ['^react$', '^react-native$'],
-            ['^@?\\w'],
-            [
-              '^(@|src/|components/|screens/|hooks/|utils/|services/|store/|assets/|theme/|types/)',
-            ],
-            ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
-            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
-            ['^\\u0000'],
-            ['^.+\\.json$'],
-          ],
+          groups: IMPORT_SORT_GROUPS,
         },
       ],
-
       'simple-import-sort/exports': 'error',
       'import/first': 'error',
       'import/newline-after-import': 'error',
@@ -137,8 +132,9 @@ module.exports = defineConfig([
       'import/no-unresolved': 'off',
       'import/namespace': 'off',
       'import/named': 'off',
-      'unused-imports/no-unused-imports': 'error',
 
+      // Unused imports/vars
+      'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',
         {
@@ -151,41 +147,31 @@ module.exports = defineConfig([
       ],
     },
   },
-  globalIgnores([
-    '**/node_modules/',
-    '**/babel.config.js',
-    '**/metro.config.js',
-    '**/jest.config.js',
-    '**/coverage/',
-    '**/dist/',
-    '**/build/',
-    '**/android/',
-    '**/ios/',
-    '**/*.generated.*',
-  ]),
+
   {
     files: ['**/*.js'],
-
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-var-requires': 'off',
     },
   },
+
   {
     files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
-    ...jest.recommended,
+    plugins: {
+      jest: jestPlugin,
+    },
     languageOptions: {
       globals: {
-        ...jest.environments.globals.globals,
+        ...jestPlugin.environments.globals.globals,
       },
     },
-
     rules: {
+      ...jestPlugin.configs.recommended.rules,
       'jest/no-disabled-tests': 'warn',
       'jest/no-focused-tests': 'error',
       'jest/valid-expect': 'error',
       'no-console': 'off',
     },
   },
-  globalIgnores(['**/vendor/', '**/coverage/']),
-]);
+];
