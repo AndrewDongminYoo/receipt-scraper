@@ -418,6 +418,8 @@ function ReceiptUploadScreen() {
             title="영수증 스캔하기"
             variant="primary"
           />
+          {/* This variable is set to true when react-native is running in Dev mode */}
+          {/* eslint-disable-next-line no-undef */}
           {__DEV__ ? (
             <AppButton
               onPress={async () => {
