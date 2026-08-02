@@ -93,11 +93,7 @@ function getUploadErrorMessage(error: unknown) {
 }
 
 type CaptureFailureKind =
-  | 'cancelled'
-  | 'duplicate'
-  | 'ocr_failed'
-  | 'refund'
-  | 'wrong_type';
+  'cancelled' | 'duplicate' | 'ocr_failed' | 'refund' | 'wrong_type';
 
 function createAssetFromUri(uri: string): Asset {
   const fileName =

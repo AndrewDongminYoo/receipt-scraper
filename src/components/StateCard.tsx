@@ -11,12 +11,7 @@ import {
 import { colors, fontSizes, fontWeights, radii, space } from '../theme/tokens';
 
 export type StateCardVariant =
-  | 'error'
-  | 'info'
-  | 'neutral'
-  | 'success'
-  | 'loading'
-  | 'empty';
+  'error' | 'info' | 'neutral' | 'success' | 'loading' | 'empty';
 
 interface StateCardProps {
   children?: React.ReactNode;
