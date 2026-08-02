@@ -174,4 +174,15 @@ module.exports = [
       'no-console': 'off',
     },
   },
+
+  {
+    // Keep LAST so it wins the settings merge.
+    settings: {
+      react: {
+        // Pin the React version so eslint-plugin-react skips auto-detection.
+        // detectReactVersion() calls context.getFilename(), removed in ESLint 10.
+        version: '19.2',
+      },
+    },
+  },
 ];
