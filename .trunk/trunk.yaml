@@ -7,7 +7,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.6
+      ref: v1.11.0
       uri: https://github.com/trunk-io/plugins
 # Many linters and tools depend on runtimes - configure them here. (https://docs.trunk.io/runtimes)
 runtimes:
@@ -15,7 +15,7 @@ runtimes:
     - go@1.21.0
     - java@13.0.11
     - node@22.16.0
-    - python@3.10.8
+    - python@3.14.4
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   ignore:
@@ -24,18 +24,21 @@ lint:
     - linters: [shfmt, shellcheck]
       paths: [android/gradlew]
   enabled:
-    - cspell@10.0.0
-    - checkov@3.2.524
+    - grype@0.110.0
+    - cspell@10.0.1
+    - checkov@3.3.8
     - dotenv-linter@4.0.0
+    # Pinned to the workspace eslint major: eslint-plugin-react@7.37.5 still calls
+    # context.getFilename(), removed in ESLint 10. Bump both together.
     - eslint@9.39.4
     - git-diff-check
     - ktlint@1.8.0
-    - markdownlint@0.48.0
+    - markdownlint@0.49.1
     - osv-scanner@2.3.5
     - oxipng@10.1.0
-    - prettier@3.8.3
+    - prettier@3.9.6
     - shellcheck@0.11.0
-    - shfmt@3.6.0
+    - shfmt@3.13.1
     - trufflehog@3.94.3
     - yamllint@1.38.0
 actions:
