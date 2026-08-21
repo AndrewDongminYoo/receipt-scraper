@@ -18,7 +18,8 @@ dictionaries:
   - bash
   - ruby
   - cpp
-words: [pbxproj]
-allowCompoundWords: true
+  - cpp-compound-words
+  - cpp-legacy
+words: [pbxproj, xcodeproj]
+allowCompoundWords: false
 ignoreWords: []
-import: []
