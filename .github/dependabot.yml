@@ -36,6 +36,14 @@ updates:
           - version-update:semver-patch
           - version-update:semver-minor
           - version-update:semver-major
+      # eslint is pinned to the Trunk linter version (.trunk/trunk.yaml), and @eslint/js must
+      # share its major; an @eslint/js 10 next to eslint 9 broke that peer range.
+      - dependency-name: eslint
+        update-types:
+          - version-update:semver-major
+      - dependency-name: '@eslint/js'
+        update-types:
+          - version-update:semver-major
     groups:
       npm-minor-patch:
         patterns:
