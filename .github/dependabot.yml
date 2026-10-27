@@ -36,6 +36,32 @@ updates:
           - version-update:semver-patch
           - version-update:semver-minor
           - version-update:semver-major
+      # React Native 0.84.1 bundles renderers built for React 19.2.3 exactly, and its renderer
+      # README says not to bump react. react-test-renderer must match react.
+      # The React Native upgrade path moves both, not Dependabot (receipt-scraper#22).
+      # update-types limits this to version updates; security updates still open.
+      - dependency-name: react
+        update-types:
+          - version-update:semver-patch
+          - version-update:semver-minor
+          - version-update:semver-major
+      - dependency-name: react-test-renderer
+        update-types:
+          - version-update:semver-patch
+          - version-update:semver-minor
+          - version-update:semver-major
+      # Reanimated 4.7 and Worklets 0.13 declare peers for React Native 0.86 to 0.88; this app is
+      # on 0.84.1 (receipt-scraper#22). Patch updates stay open. Minor and major follow the
+      # React Native upgrade path.
+      # update-types limits this to version updates; security updates still open.
+      - dependency-name: react-native-reanimated
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-major
+      - dependency-name: react-native-worklets
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-major
       # eslint is pinned to the Trunk linter version (.trunk/trunk.yaml), and @eslint/js must
       # share its major; an @eslint/js 10 next to eslint 9 broke that peer range.
       - dependency-name: eslint
