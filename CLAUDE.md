@@ -42,7 +42,7 @@ This is **not** a production app. Decisions should favour speed of execution and
 | `react-native-image-picker`      | prod  | Photo picker      |
 | `react-native-safe-area-context` | prod  | Safe area insets  |
 | `react-native-screens`           | prod  | Native screens    |
-| `typescript` 5.8.3               | dev   | Type checking     |
+| `typescript` 6.0.3               | dev   | Type checking     |
 | `zod`                            | prod  | Schema validation |
 
 ### Planned (add only when the day's scope requires it)
@@ -118,7 +118,8 @@ yarn start          # Metro bundler
 yarn ios            # iOS simulator
 yarn android        # Android emulator
 yarn lint           # ESLint
-yarn test           # Jest
+yarn typecheck      # TypeScript without output
+yarn test --ci --runInBand # Jest with RN mocks
 ```
 
 iOS first-time or after native dependency changes:
@@ -131,7 +132,7 @@ bundle exec pod install         # run from ios/ after native dep changes
 Broad quality check (if Trunk CLI is installed):
 
 ```bash
-trunk check
+trunk check --monitor=false --all --no-fix
 ```
 
 ---
@@ -168,3 +169,12 @@ When assisting with this project, keep these RN-specific nuances in mind:
 - `FlatList` `keyExtractor` must be stable; avoid index-based keys.
 - Debugging spans JS console, Metro, Xcode logs, and Android Studio simultaneously.
 - Image permissions differ between iOS and Android and between SDK versions — handle both explicitly.
+
+## Maintenance boundaries
+
+Use Yarn Classic 1.22.22 and Node 24.22.2 for the current CI commands.
+Keep React/react-test-renderer 19.2.3, RN 0.84.1, Reanimated 4.5.5 and worklets 0.11.4 aligned with the existing native baseline.
+TypeScript 6 is checked by CI; the current CSS ambient declarations remain global and need no relocation.
+Jest uses the existing React Native mocks and does not establish native/device or OCR service behavior.
+The deepmerge no-patch exception includes CLI and Jest paths; do not describe those paths as unreachable.
+See README maintenance verification for scanner limits and deferred integration families.

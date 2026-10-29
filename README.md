@@ -218,14 +218,16 @@ The structure should grow only when features require it. Empty folders are not t
 
 ### Commands
 
-Use Yarn from the repository root:
+Use Yarn Classic 1.22.22 from the repository root.
+The CI and `.nvmrc` verification runtime is Node 24.22.2; the public Node engine floor remains unchanged.
 
 ```bash
 yarn start
 yarn ios
 yarn android
 yarn lint
-yarn test
+yarn typecheck
+yarn test --ci --runInBand
 ```
 
 For iOS setup after cloning or after native dependency changes:
@@ -284,3 +286,20 @@ capture pipeline. Its currently approved constraints are:
 - [`BLUEPRINT.md`](./BLUEPRINT.md): the detailed sprint plan and non-negotiable scope
 - [`AGENTS.md`](./AGENTS.md): repository guidelines for automated contributors
 - [`CLAUDE.md`](./CLAUDE.md): assistant-facing project context and working rules
+
+## Maintenance verification
+
+The declared CI gates install the frozen Yarn lock, run ESLint, compile TypeScript without emitting files, run the scanner-reader regressions, and run Jest with React Native mocks.
+These checks do not verify a native build, device behavior, OCR service integration or rendered layout.
+
+React and react-test-renderer remain aligned at 19.2.3 with React Native 0.84.1; Reanimated 4.5.5 and worklets 0.11.4 retain the existing native baseline.
+TypeScript 6 accepts the existing global CSS ambient declarations in `src/types/index.ts`; no declaration relocation is needed.
+The current test API remains React Native Testing Library 13 because version 14 introduces a replacement renderer dependency.
+Babel 7 and Tailwind 3 remain within the current React Native and NativeWind integration families.
+
+For the full repository quality scan, run `trunk check --monitor=false --all --no-fix`.
+After a one-off run, execute `trunk daemon shutdown --monitor=false` in the same directory; disabling monitoring does not terminate the per-repository daemon.
+Pinact 4.1.1 exposes lint and upgrade; the secret scan is offline and fails on scan errors.
+Its SARIF reader bounds individual source reads to 1 MiB plus a sentinel byte and caches eight sources; the regression allocation limits apply to their ASCII fixtures, not universal process memory or I/O time.
+OSV retains an explicit no-fixed-release exception for deepmerge 4.3.1 in Jest and React Native CLI tooling.
+The obsolete image-size exceptions are removed because that package is absent from the resolved graph.

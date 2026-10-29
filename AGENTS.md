@@ -12,17 +12,18 @@ Use Yarn from the repo root:
 - `yarn android`: build and launch the Android app.
 - `yarn ios`: build and launch the iOS app.
 - `yarn lint`: run ESLint across the repo.
+- `yarn typecheck`: check TypeScript without emitting files.
 - `yarn test`: run Jest tests.
 
-For iOS setup, run `bundle install` once, then `bundle exec pod install` in `ios/` after native dependency changes. If Trunk CLI is installed, `trunk check` is the broadest quality pass.
+For iOS setup, run `bundle install` once, then `bundle exec pod install` in `ios/` after native dependency changes. If Trunk CLI is installed, `trunk check --monitor=false` is the broadest quality pass.
 
 ## Coding Style & Naming Conventions
 
-Follow the repo formatter and lint config: Prettier uses single quotes, trailing commas, and no forced parens for single-arg arrows; ESLint extends `@react-native`. Use 2-space indentation and prefer functional components. Name React components and screen files in `PascalCase`, hooks in `camelCase` with a `use` prefix, and test files as `*.test.tsx`. Keep shared styles in `StyleSheet.create` near the component unless reuse is obvious.
+Follow the repo formatter and lint config: Prettier uses single quotes, trailing commas, and no forced parens for single-arg arrows; ESLint uses the committed flat configuration and TypeScript/React/Jest plugins. Use 2-space indentation and prefer functional components. Name React components and screen files in `PascalCase`, hooks in `camelCase` with a `use` prefix, and test files as `*.test.tsx`. Keep shared styles in `StyleSheet.create` near the component unless reuse is obvious.
 
 ## Testing Guidelines
 
-Jest uses the React Native preset (`jest.config.js`) with `@testing-library/react-native` as the primary test API. Keep `react-test-renderer` installed only because `@testing-library/react-native` requires it as a peer dependency; do not write new tests against the renderer API directly. Add or update tests in `__tests__/` for any behavioral change, and keep test names descriptive, for example `ReceiptListScreen.test.tsx`. Prefer assertions on visible text, enabled/disabled state, and user-observable screen behavior over reading component props. At minimum, run `yarn test` and `yarn lint` before opening a PR. There is no published coverage threshold yet, so contributors should treat new UI states and navigation flows as required test targets.
+Jest uses the React Native preset (`jest.config.js`) with `@testing-library/react-native` as the primary test API. Keep `react-test-renderer` installed only because `@testing-library/react-native` requires it as a peer dependency; do not write new tests against the renderer API directly. Add or update tests in `__tests__/` for any behavioral change, and keep test names descriptive, for example `ReceiptListScreen.test.tsx`. Prefer assertions on visible text, enabled/disabled state, and user-observable screen behavior over reading component props. At minimum, run `yarn test --ci --runInBand`, `yarn lint` and `yarn typecheck` before opening a PR. There is no published coverage threshold yet, so contributors should treat new UI states and navigation flows as required test targets.
 
 ## Commit & Pull Request Guidelines
 
