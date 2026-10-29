@@ -22,6 +22,7 @@ legendapp
 mtrl
 nativewind
 pgpr
+pinact
 Podfile
 podspec
 Pressable
@@ -30,6 +31,7 @@ receiptscraper
 Riverpod
 RNML
 rnscreens
+SARIF
 shellness
 swmansion
 Testables

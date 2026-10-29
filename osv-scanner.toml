@@ -1,13 +1,7 @@
-# OSV Scanner configuration
-# Reference: https://github.com/google/osv-scanner/blob/main/docs/config.md
-
-# image-size: 패치 없는 취약점 (2026-08-20 기준)
-# @react-native/metro-config → metro-config → metro → image-size 경로로 설치됨
-# 직접 의존성이 아닌 전이 의존성으로, 현재 패치 버전 없음
+# cspell:words GHSA-gcqx-w48m-w2h4
+# Reviewed on 2026-10-29 against the official GitHub advisory and resolved lock.
+# Both Jest configuration and React Native CLI tooling install deepmerge 4.3.1.
+# No fixed release exists; do not claim these paths are unreachable.
 [[IgnoredVulns]]
-id = "GHSA-w3rx-r6r6-pgpr"
-reason = "image-size@1.2.1 has no patch available as of 2026-08-20. All usages are transitive via @react-native/metro-config. Re-evaluate when a fix is released."
-
-[[IgnoredVulns]]
-id = "GHSA-5p2g-fcmc-qvqq"
-reason = "image-size@1.2.1 has no patch available as of 2026-08-20. All usages are transitive via @react-native/metro-config. Re-evaluate when a fix is released."
+id = "GHSA-gcqx-w48m-w2h4"
+reason = "deepmerge 4.3.1 has no published fixed release in the checked advisory. Retained through Jest configuration and React Native CLI configuration/doctor tooling; reassess when a compatible fix becomes available."

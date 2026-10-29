@@ -9,7 +9,7 @@ dictionaryDefinitions:
     addWords: true
 dictionaries:
   - custom-dictionary
-  - sortwareTerms
+  - softwareTerms
   - filetypes
   - en_us
   - en-gb
