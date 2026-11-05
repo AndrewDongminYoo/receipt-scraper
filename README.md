@@ -290,7 +290,9 @@ capture pipeline. Its currently approved constraints are:
 ## Maintenance verification
 
 The declared CI gates install the frozen Yarn lock, run ESLint, compile TypeScript without emitting files, run the scanner-reader regressions, and run Jest with React Native mocks.
-These checks do not verify a native build, device behavior, OCR service integration or rendered layout.
+After these gates pass, hosted jobs install the locked CocoaPods dependencies in deployment mode, build the `receiptScraper` Debug iOS Simulator app without code signing, and run Android `:app:assembleDebug`.
+The jobs upload the simulator app tarball and universal Debug APK, with their SHA-256 hashes and build metadata in the run summary; artifact retention follows the repository default.
+Native builds and artifact uploads do not verify installation, device behavior, OCR service integration or rendered layout.
 
 React and react-test-renderer remain aligned at 19.2.3 with React Native 0.84.1; Reanimated 4.5.5 and worklets 0.11.4 retain the existing native baseline.
 TypeScript 6 accepts the existing global CSS ambient declarations in `src/types/index.ts`; no declaration relocation is needed.
