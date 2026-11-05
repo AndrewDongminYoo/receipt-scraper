@@ -1,7 +1,17 @@
-# cspell:words GHSA-gcqx-w48m-w2h4
+# cspell:words GHSA-gcqx-w48m-w2h4 minimatch
 # Reviewed on 2026-10-29 against the official GitHub advisory and resolved lock.
 # Both Jest configuration and React Native CLI tooling install deepmerge 4.3.1.
 # No fixed release exists; do not claim these paths are unreachable.
 [[IgnoredVulns]]
 id = "GHSA-gcqx-w48m-w2h4"
 reason = "deepmerge 4.3.1 has no published fixed release in the checked advisory. Retained through Jest configuration and React Native CLI configuration/doctor tooling; reassess when a compatible fix becomes available."
+
+[[IgnoredVulns]]
+id = "GHSA-3g3m-2fjr-6pw4"
+ignoreUntil = 2027-05-05
+reason = "Reviewed on 2026-11-05: glob 13.0.6 through Jest and glob 10.5.0 through Jest's babel-plugin-istanbul/test-exclude path require glob 14.0.2 to fix the advisory. Current parent releases still require older major lines. yarn why glob confirms these development-tool paths; the lint and Jest commands execute tooling, so non-reachability is not claimed. Re-evaluate when Jest and test-exclude accept a patched major. Approved on 2026-11-05."
+
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+ignoreUntil = 2027-05-05
+reason = "Reviewed on 2026-11-05: minimatch 10.2.6 through ESLint, typescript-eslint and Jest tooling, and 9.0.9 through glob 10.5.0, require minimatch 11.0.1 to fix the advisory. Current parent releases retain older major ranges. yarn why minimatch confirms the graph; the lint and Jest commands execute tooling, so non-reachability is not claimed. Re-evaluate when these parent tools accept minimatch 11. Approved on 2026-11-05."
