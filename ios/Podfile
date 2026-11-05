@@ -1,9 +1,63 @@
+# cspell:words podspecs reactnative xcconfig
 # Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
     "react-native/scripts/react_native_pods.rb",
     {paths: [process.argv[1]]},
   )', __dir__]).strip
+
+# RN 0.84.1 serializes checkout-specific paths into these prebuilt podspecs.
+# Use the same official Debug archives and an equivalent Xcode-relative compiler
+# path before CocoaPods stores the specs; keep Release replacement phases intact.
+module ReceiptScraperPortablePrebuiltSpecs
+  def from_file(file, *args)
+    spec = super
+    podspecs = {
+      'React-Core-prebuilt.podspec' => 'React-Core-prebuilt',
+      'third-party-podspecs/ReactNativeDependencies.podspec' => 'ReactNativeDependencies',
+      'sdks/hermes-engine/hermes-engine.podspec' => 'hermes-engine',
+    }
+    return spec unless podspecs.keys.any? { |name| File.basename(name) == File.basename(file) }
+
+    rn_package = Pod::Executable.execute_command('node', ['-p',
+      'require.resolve("react-native/package.json", {paths: [process.argv[1]]})',
+      Pod::Config.instance.installation_root.to_s]).strip
+    rn_root = Pathname.new(rn_package).parent
+    relative = podspecs.keys.find { |name| rn_root + name == Pathname.new(file).realpath }
+    return spec unless relative
+
+    version = JSON.parse((rn_root + 'package.json').read).fetch('version')
+    unless version == '0.84.1' && spec.name == podspecs.fetch(relative)
+      raise Pod::Informative, 'Review the RN 0.84.1 portable prebuilt podspec configuration.'
+    end
+
+    if spec.name == 'hermes-engine'
+      compiler_entry = Pod::Executable.execute_command('node', ['-p',
+        'require.resolve("hermes-compiler", {paths: [process.argv[1]]})', rn_root.to_s]).strip
+      compiler = Pathname.new(compiler_entry).parent + 'hermesc/osx-bin/hermesc'
+      unless spec.version.to_s == '250829098.0.9' &&
+          spec.source == { :http => release_tarball_url('250829098.0.9', :debug) } &&
+          spec.attributes_hash['user_target_xcconfig'] == { 'HERMES_CLI_PATH' => compiler.to_s }
+        raise Pod::Informative, 'Unexpected Hermes prebuilt source or compiler configuration.'
+      end
+      spec.user_target_xcconfig = {
+        'HERMES_CLI_PATH' => "$(PODS_ROOT)/#{compiler.relative_path_from(Pod::Config.instance.project_pods_root.realpath)}",
+      }
+    else
+      core = spec.name == 'React-Core-prebuilt'
+      artifact = core ? 'ReactNativeCore-artifacts/reactnative-core' : 'ReactNativeDependencies-artifacts/reactnative-dependencies'
+      cache = Pod::Config.instance.project_pods_root + "#{artifact}-#{version}-debug.tar.gz"
+      unless spec.version.to_s == version && spec.source == { :http => URI::File.build(:path => cache.to_s).to_s }
+        raise Pod::Informative, 'Unexpected React Native prebuilt archive configuration.'
+      end
+      url = core ? ReactNativeCoreUtils.stable_tarball_url(version, :debug) : ReactNativeDependenciesUtils.release_tarball_url(version, :debug)
+      spec.source = { :http => url }
+    end
+    spec
+  end
+end
+
+Pod::Specification.singleton_class.prepend(ReceiptScraperPortablePrebuiltSpecs)
 
 # Helpers::Constants.min_ios_version_supported = 15.1
 # RNMLKitTextRecognition = 15.5
