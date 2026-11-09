@@ -46,7 +46,7 @@ jobs:
         with:
           node-version: 24.22.2
       - run: npm exec --yes --package=yarn@1.22.22 -- yarn install --frozen-lockfile
-      - uses: ruby/setup-ruby@de492cf36cbab201753d720ce4f4e336cd688c94 # v1.336.0
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
         with:
           ruby-version: 3.4.1
           bundler: Gemfile.lock
