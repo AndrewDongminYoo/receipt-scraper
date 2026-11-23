@@ -88,8 +88,8 @@ GEM
     rexml (3.4.4)
     ruby-macho (4.1.0)
     securerandom (0.4.1)
-    typhoeus (1.7.1)
-      ethon (>= 0.19.1, < 0.20.0)
+    typhoeus (1.8.0)
+      ethon (>= 0.19.2, < 0.20.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     xcodeproj (1.28.1)
@@ -151,7 +151,7 @@ CHECKSUMS
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
   ruby-macho (4.1.0) sha256=23dab37f7de0fe1e14f3bfa73bebc423ae8cd1d4fdb3e5585abc45a841eca920
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1
-  typhoeus (1.7.1) sha256=86dcb6d787ee08e34947c9436b24af3c4b02880dc83c466b6ca4dbfc53c2ee7f
+  typhoeus (1.8.0) sha256=c196d607908bc3350a191af673c24cf3ce6052c5ab0f6d485e55b3b36a28b421
   tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
   xcodeproj (1.28.1) sha256=6f12670f00739d9817ca27ac89d6ef01cc86050e22a0bc08a3131487e5b5cddc
 
